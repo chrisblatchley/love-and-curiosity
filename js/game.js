@@ -28,6 +28,7 @@ var keysDown = new Array(222);	// A Boolean array to show which keys are pressed
 // Game Constants
 var Direction = { Up:0, Down:1, Left:2, Right: 3 };
 var spriteImage = loadImage("media/sprite.png");
+var tileBack = loadImage("media/rocktile.png");
 
 //*****************************************************************************
 //*****************************************************************************
@@ -153,7 +154,7 @@ function updateGame() {
 		   					//Kill enemy
 		   					spriteQueue.remove(j)
 		   					//Spawn a new NPC
-		   					respawnNPC();
+		   					spawnNPC();
 		   					//Skip checking other enemies
 		   					continue laser_loop;
 		   				}
@@ -206,6 +207,12 @@ function updateGame() {
 function drawScreen() {
 	// Clear Drawing Canvas
 	ctx.clearRect(0,0, canvas.width, canvas.height);
+
+	//Draw tile background
+	var pattern = ctx.createPattern(tileBack, 'repeat');
+    ctx.rect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = pattern;
+    ctx.fill();
 
 	// Draw Player Art
 	ctx.save();
