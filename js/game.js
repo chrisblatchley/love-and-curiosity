@@ -202,6 +202,14 @@ function updateGame() {
 	};
 	laserQueue = newQueue;
 	if(player.shotCounter > 0) player.shotCounter--;	// Decrease shot counter
+
+	//Move NPCs towards the player
+	for (var i = 0; i < spriteQueue.length; i++) 
+	{
+		spriteQueue[i].x = spriteQueue[i].x - Math.sin(Math.atan2((spriteQueue[i].x + spriteQueue[i].image.width / 2) - player.x, player.y - (spriteQueue[i].y + spriteQueue[i].image.height / 2))) * spriteQueue[i].speed;
+		spriteQueue[i].y = spriteQueue[i].y + Math.cos(Math.atan2(player.x - (spriteQueue[i].x + spriteQueue[i].image.width / 2), player.y - (spriteQueue[i].y + spriteQueue[i].image.height / 2))) * spriteQueue[i].speed;
+	};
+
 }
 
 //
@@ -381,6 +389,7 @@ function respawnNPC() {
 function Sprite (x, y, image) {
 	this.x = x;
 	this.y = y;
+	this.speed = 1;
 	this.image = image;
 }
 
