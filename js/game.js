@@ -58,6 +58,16 @@ Array.prototype.remove = function(from, to) {
   return this.push.apply(this, rest);
 };
 
+// Array remove by object
+Array.prototype.removeObject = function(object) {
+	for (var i = this.length - 1; i >= 0; i--) {
+		if(this[i] == object) {
+			this.remove[i];
+			break;
+		}
+	};
+}
+
 //
 // Game Functions
 //
