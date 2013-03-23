@@ -220,6 +220,7 @@ function updateGame() {
 		spriteQueue[i].y = spriteQueue[i].y + Math.cos(Math.atan2(player.x - (spriteQueue[i].x + spriteQueue[i].image.width / 2), player.y - (spriteQueue[i].y + spriteQueue[i].image.height / 2))) * spriteQueue[i].speed;
 	};
 
+	console.log(hasLoS(0, canvas.width, 0, canvas.height));
 }
 
 //
@@ -307,12 +308,13 @@ function shoot(x, y, theta) {
 // Spawn NPC
 function spawnNPC() {
 	var x, y, s;
+	s = new Sprite(0, 0, spriteImage);
 	do
 	{
-		x = Math.random() * 10000 % canvas.width;
-		y = Math.random() * 10000 % canvas.height;
-	}while (!checkSpawnArea(x, y));
-	s = new Sprite(x, y, spriteImage);
+		s.x = Math.random() * 10000 % canvas.width;
+		s.y = Math.random() * 10000 % canvas.height;
+	}while (!isInsideCanvas(s) && !isCollidingWithObject(s.x, s.y) && !isInSafeArea(s));
+	
 	spriteQueue.push(s);
 }
 
@@ -329,40 +331,49 @@ function locationOverlap(ax1, ax2, ay1, ay2, bx1, bx2, by1, by2)
 
 // Check Spawn Area
 // Ensures a sprite spawns within a legal area and not on top of another sprite
-function checkSpawnArea(x, y)
+// Returns false if no collisions are detected
+// Returns true if a collision is detected
+function isCollidingWithObject(checkX, checkY)
 {
-	//Make sure we spawn on the canvas, ALL the way on the canvas
-	if(x >= 0 && y >= 0 && (x + spriteImage.width) <= canvas.width && (y + spriteImage.height) <= canvas.height)
-	{
+		//Do we include the player in the calculation?
 		//Are we spawning too close to the player?
-		if (Math.pow((x + spriteImage.width / 2) - player.x, 2) + Math.pow((y + spriteImage.width / 2) - player.y, 2) <= Math.pow(player.safeArea, 2))
-			return false;
 
 		//Check the existing sprites to ensure no overlap
 		for (var i = 0; i < spriteQueue.length; i++) 
 		{
-			if (locationOverlap(	x,
-									(x + spriteImage.width), 
-									y, 
-									(y + spriteImage.height), 
+			if (locationOverlap(	checkX,
+									(checkX + spriteImage.width), 
+									checkY, 
+									(checkY + spriteImage.height), 
 									spriteQueue[i].x, 
 									(spriteQueue[i].x + spriteQueue[i].image.width), 
 									spriteQueue[i].y, 
-									(spriteQueue[i].y + spriteQueue[i].image.height)
-								)) return false;
+									(spriteQueue[i].y + spriteQueue[i].image.height))) {
+				return true;
+			}
 		};
-		return true;
-	}
-	else
-	{
 		return false;
-	}
+}
+
+function isInsideCanvas(myObj)
+{
+	if(myObj.x >= 0 && myObj.y >= 0 && (myObj.x + myObj.image.width) <= canvas.width && (myObj.y + myObj.image.height) <= canvas.height)
+		return true;
+	else
+		return false;
+}
+
+function isInSafeArea(myObj)
+{
+	if (Math.pow((myObj.x + myObj.image.width / 2) - player.x, 2) + Math.pow((myObj.y + myObj.image.width / 2) - player.y, 2) <= Math.pow(player.safeArea, 2))
+		return true;
 }
 
 // Respawn NPC
 // Spawns an NPC within a weighted random of other NPCs
 function respawnNPC() {
-	var x, y, s;
+	var s;
+	s = new Sprite(0, 0, spriteImage);
 
 	//Calculate the average sprite locations
 	var xavg = 0, yavg = 0;
@@ -377,18 +388,40 @@ function respawnNPC() {
 	do
 	{
 		var ylim;
-		x = Math.random() * 2 * enemyRadius - enemyRadius;
-		ylim = Math.sqrt(Math.pow(enemyRadius, 2) - Math.pow(x, 2));
-		y = Math.random() * 2 * ylim - ylim;
+		s.x = Math.random() * 2 * enemyRadius - enemyRadius;
+		ylim = Math.sqrt(Math.pow(enemyRadius, 2) - Math.pow(s.x, 2));
+		s.y = Math.random() * 2 * ylim - ylim;
 
 		//Now that we've come up with a random location in a circle, add the average locations
-		x = x + xavg;
-		y = y + yavg;
-	}while (!checkSpawnArea(x, y));
+		s.x += xavg;
+		s.y += yavg;
+	}while (!isInsideCanvas(s) && !isCollidingWithObject(s.x, s.y) && !isInSafeArea(s));
 
 	//Make the sprite and push it to the spriteQueue
-	s = new Sprite(x, y, spriteImage);
 	spriteQueue.push(s);
+}
+
+// Check Line of Sight
+// See if we have a straight shot from one point to another, used for enemy burrowing and projectile decisions.
+function hasLoS(x1, x2, y1, y2)
+{
+	var i, xc, yc, objTheta;
+	//First, calculate pythagorean distance between the two points
+	var dist = Math.round(Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)));
+
+	dy = y1 - y2;
+	dx = x1 - x2;
+	objTheta = Math.atan2(dy, dx);
+	//Incrementally check an area to see if there is anything blocking LoS
+	for (i = 0; i < dist; i+=5)
+	{
+		xc = x1 + Math.sin(objTheta) * i;
+		yc = y1 + Math.cos(objTheta) * i;
+		$("#message").html("Checking LoS x: " + xc + " y: " + yc);
+		if(!isCollidingWithObject(xc, yc))
+			return true;
+	};
+	return false;
 }
 
 //*****************************************************************************
@@ -399,7 +432,7 @@ function respawnNPC() {
 function Sprite (x, y, image) {
 	this.x = x;
 	this.y = y;
-	this.speed = 1;
+	this.speed = 0.50;
 	this.image = image;
 }
 
@@ -411,4 +444,13 @@ function Laser(x, y, theta) {
 	this.theta = theta;
 	this.size = 5;
 	this.speed = 20;
+}
+
+// Basic Enemy Projectile
+function EnemyProjectile(x, y, theta)
+{
+	this.x = x;
+	this.y = y;
+	this.theta = theta;
+	this.speed = 1.5;
 }
