@@ -1,0 +1,31 @@
+body {
+	background: url("../media/mochaGrunge.png");
+}
+
+h1 {
+	font-size: 50px;
+}
+
+h1, h2 {
+	font-family: sans-serif;
+	font-weight: lighter;
+	text-align: center;
+}
+
+#main {
+	width: 802px;
+	margin: 0 auto 0 auto;
+}
+
+#game {
+	width: 800px;
+	height: 600px;
+	background: #000;
+	border: solid 1px white;
+}
+
+#message {
+	height: 2em;
+	text-align: center;
+	background: rgba(255,255,255,0.5);
+}
