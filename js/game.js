@@ -82,6 +82,7 @@ function initGame() {
 	player.forwardSpeed = 4;
 	player.rotateSpeed = 0.06;
 	player.shotCounter = 0;
+	player.safeArea = 100
 
 	// Create some random NPCs
 	for(var i = 0; i < 6; i++) {
@@ -288,13 +289,56 @@ function shoot(x, y, theta) {
 // Spawn NPC
 function spawnNPC() {
 	var x, y, s;
-	while (!(x >= 0 && y >= 0 && (x + spriteImage.width) <= canvas.width && (y + spriteImage.height) <= canvas.height))
+	do
 	{
 		x = Math.random() * 10000 % canvas.width;
 		y = Math.random() * 10000 % canvas.height;
-	}
+	}while (!checkSpawnArea(x, y));
 	s = new Sprite(x, y, spriteImage);
 	spriteQueue.push(s);
+}
+
+// Check for a location overlap
+// See if two boxes overlap each other
+function locationOverlap(ax1, ax2, ay1, ay2, bx1, bx2, by1, by2)
+{
+	if (ax2 < bx1) return false;
+	if (ax1 > bx2) return false;
+	if (ay2 < by1) return false;
+	if (ay1 > by2) return false;
+	return true;
+}
+
+// Check Spawn Area
+// Ensures a sprite spawns within a legal area and not on top of another sprite
+function checkSpawnArea(x, y)
+{
+	//Make sure we spawn on the canvas, ALL the way on the canvas
+	if(x >= 0 && y >= 0 && (x + spriteImage.width) <= canvas.width && (y + spriteImage.height) <= canvas.height)
+	{
+		//Are we spawning too close to the player?
+		if (Math.pow((x + spriteImage.width / 2) - player.x, 2) + Math.pow((y + spriteImage.width / 2) - player.y, 2) <= Math.pow(player.safeArea, 2))
+			return false;
+
+		//Check the existing sprites to ensure no overlap
+		for (var i = 0; i < spriteQueue.length; i++) 
+		{
+			if (locationOverlap(	x,
+									(x + spriteImage.width), 
+									y, 
+									(y + spriteImage.height), 
+									spriteQueue[i].x, 
+									(spriteQueue[i].x + spriteQueue[i].image.width), 
+									spriteQueue[i].y, 
+									(spriteQueue[i].y + spriteQueue[i].image.height)
+								)) return false;
+		};
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 // Respawn NPC
@@ -305,14 +349,14 @@ function respawnNPC() {
 	//Calculate the average sprite locations
 	var xavg = 0, yavg = 0;
 	for (var i = 0; i < spriteQueue.length; i++) {
-		xavg = xavg + spriteQueue[i].x;
-		yavg = yavg + spriteQueue[i].y;
+		xavg = xavg + spriteQueue[i].x + (spriteQueue[i].image.width / 2);
+		yavg = yavg + spriteQueue[i].y + (spriteQueue[i].image.height / 2);
 	};
 	xavg = xavg / spriteQueue.length;
 	yavg = yavg / spriteQueue.length;
 
 	//Choose a random location within the enemyRadius circle of the average, then check to make sure its inside the canvas
-	while (!(x >= 0 && y >= 0 && (x + spriteImage.width) <= canvas.width && (y + spriteImage.height) <= canvas.height))
+	do
 	{
 		var ylim;
 		x = Math.random() * 2 * enemyRadius - enemyRadius;
@@ -322,7 +366,7 @@ function respawnNPC() {
 		//Now that we've come up with a random location in a circle, add the average locations
 		x = x + xavg;
 		y = y + yavg;
-	};
+	}while (!checkSpawnArea(x, y));
 
 	//Make the sprite and push it to the spriteQueue
 	s = new Sprite(x, y, spriteImage);
