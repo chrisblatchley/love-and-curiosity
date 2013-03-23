@@ -288,8 +288,11 @@ function shoot(x, y, theta) {
 // Spawn NPC
 function spawnNPC() {
 	var x, y, s;
-	x = Math.random() * 10000 % canvas.width;
-	y = Math.random() * 10000 % canvas.height;
+	while (!(x >= 0 && y >= 0 && (x + spriteImage.width) <= canvas.width && (y + spriteImage.height) <= canvas.height))
+	{
+		x = Math.random() * 10000 % canvas.width;
+		y = Math.random() * 10000 % canvas.height;
+	}
 	s = new Sprite(x, y, spriteImage);
 	spriteQueue.push(s);
 }
