@@ -69,7 +69,13 @@ function initGame() {
 	player.y = canvas.height / 2 - player.image.height / 2;
 	player.theta = 0;
 	player.forwardSpeed = 4;
-	player.rotateSpeed = 0.1;
+	player.rotateSpeed = 0.06;
+	player.shotCounter = 0;
+
+	// Create some random NPCs
+	for(var i = 0; i < 6; i++) {
+		spawnNPC();
+	}
 
 	$(document).keydown(function (e) { eventQueue.push(e); });
 	$(document).keyup(function (e) { eventQueue.push(e) });
@@ -85,7 +91,6 @@ function gameLoop() {
 
 		if(e.type == "keydown") {
 			keysDown[e.which] = true;
-			console.log(e.which);
 		}
 		else if(e.type == "keyup") {
 			keysDown[e.which] = false;
@@ -102,7 +107,48 @@ function gameLoop() {
 //
 // Update the automatic game state
 function updateGame() {
-	// Update Player Position
+
+	// Update Laser Positions
+	for (var i = laserQueue.length - 1; i >= 0; i--) {
+		var l = laserQueue[i];
+
+		// Calculate next laser location
+		var dx = Math.sin(l.theta) * l.speed;
+	   	var dy = Math.cos(l.theta) * l.speed;
+
+	   	// Check for collisions with nearby enemies
+	   	for (var j = spriteQueue.length - 1; j >= 0; j--) {
+	   		if( l.x > spriteQueue[j].x - 10 && l.x < spriteQueue[j].x + spriteQueue[j].image.width + 10 &&
+	   			l.y > spriteQueue[j].y - 10 && l.y < spriteQueue[j].y + spriteQueue[j].image.height + 10 )
+	   		{
+	   			// Find an exact calculation of where the collision happened
+	   			for (var i = 1; i <= l.speed; i++) {
+	   				var x = Math.sin(l.theta) * i;
+	   				var y = Math.cos(l.theta) * i;
+	   				if( l.x + x > spriteQueue[j].x && l.x + x < spriteQueue[j].x + spriteQueue[j].image.width &&
+	   					l.y - y > spriteQueue[j].y && l.y - y < spriteQueue[j].y + spriteQueue[j].image.height)
+	   				{
+	   					// Create new hit and add it to sprite queue
+	   					// var hit = new Sprite(l.x + x, l.y - y, new Image());
+	   					// spriteQueue.push(hit);
+	   					console.log("HIT!!");
+	   					//laserQueue[i] = null;
+	   					break;
+	   				}
+	   			};
+	   		}
+	   	};
+
+		l.x += dx;
+	   	l.y -= dy;
+
+	   	// Remove laser if out of bounds
+	   	if(l.x < 0 || l.x > canvas.width || l.y < 0 || l.y > canvas.width) {
+	   		laserQueue[i] = null;
+	   	}
+	};
+
+	// handle Key Triggers
 	if(keysDown[65]) { // Left Arrow
 		movePlayer(Direction.Left);
 	}
@@ -121,18 +167,6 @@ function updateGame() {
 			  player.theta);
 	}
 
-	// Update Laser Positions
-	for (var i = laserQueue.length - 1; i >= 0; i--) {
-		var l = laserQueue[i];
-		l.x += Math.sin(l.theta) * l.speed;
-	   	l.y -= Math.cos(l.theta) * l.speed
-
-	   	// Remove laser if out of bounds
-	   	if(l.x < 0 || l.x > canvas.width || l.y < 0 || l.y > canvas.width) {
-	   		laserQueue[i] = null;
-	   	}
-	};
-
 	// Remove old lasers
 	var newQueue = [];
 	for (var i = laserQueue.length - 1; i >= 0; i--) {
@@ -141,6 +175,7 @@ function updateGame() {
 		}
 	};
 	laserQueue = newQueue;
+	if(player.shotCounter > 0) player.shotCounter--;	// Decrease shot counter
 }
 
 //
@@ -156,6 +191,13 @@ function drawScreen() {
 	ctx.translate( -(player.image.width/2), -(player.image.height/2) );
 	ctx.drawImage( player.image, 0, 0 );
 	ctx.restore();
+
+	// Draw Enemy Sprites
+	ctx.fillStyle = "#fff";
+	for (var i = spriteQueue.length - 1; i >= 0; i--) {
+		var e = spriteQueue[i];
+		ctx.drawImage(e.image, e.x, e.y);
+	};
 
 	// Draw Lasers
 	ctx.strokeStyle = "red";
@@ -205,8 +247,20 @@ function movePlayer(direction) {
 //
 // Shoot Action
 function shoot(x, y, theta) {
-	var laser = new Laser(x,y,theta);
-	laserQueue.push(laser);
+	if(player.shotCounter == 0) {
+		var laser = new Laser(x,y,theta);
+		laserQueue.push(laser);
+		player.shotCounter = 15;
+	}
+}
+
+// Spawn NPC
+function spawnNPC() {
+	var x, y, s;
+	x = Math.random() * 10000 % canvas.width;
+	y = Math.random() * 10000 % canvas.height;
+	s = new Sprite(x, y, loadImage("media/sprite.png"));
+	spriteQueue.push(s);
 }
 
 //*****************************************************************************
@@ -214,10 +268,10 @@ function shoot(x, y, theta) {
 
 //
 // Sprite Basic Object
-function Sprite () {
-	this.x = 0;
-	this.y = 0;
-	this.image = null;
+function Sprite (x, y, image) {
+	this.x = x;
+	this.y = y;
+	this.image = image;
 }
 
 //
@@ -227,5 +281,5 @@ function Laser(x, y, theta) {
 	this.y = y;
 	this.theta = theta;
 	this.size = 5;
-	this.speed = 15;
+	this.speed = 20;
 }

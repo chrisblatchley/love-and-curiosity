@@ -3,23 +3,25 @@ body {
 }
 
 h1 {
-	font-size: 50px;
+	font-size: 42px;
 }
 
 h1, h2 {
 	font-family: sans-serif;
 	font-weight: lighter;
 	text-align: center;
+	padding: 0;
+	margin: 0;
 }
 
 #main {
-	width: 802px;
+	width: 1280px;
 	margin: 0 auto 0 auto;
 }
 
 #game {
-	width: 800px;
-	height: 600px;
+	width: 1280px;
+	height: 768px;
 	background: #000;
 	border: solid 1px white;
 }
