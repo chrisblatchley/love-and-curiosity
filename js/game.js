@@ -29,6 +29,7 @@ var keysDown = new Array(222);	// A Boolean array to show which keys are pressed
 var Direction = { Up:0, Down:1, Left:2, Right: 3 };
 var spriteImage = loadImage("media/sprite.png");
 var tileBack = loadImage("media/rocktile.png");
+var enemyRadius = 300;
 
 //*****************************************************************************
 //*****************************************************************************
@@ -154,7 +155,7 @@ function updateGame() {
 		   					//Kill enemy
 		   					spriteQueue.remove(j)
 		   					//Spawn a new NPC
-		   					spawnNPC();
+		   					respawnNPC();
 		   					//Skip checking other enemies
 		   					continue laser_loop;
 		   				}
@@ -296,7 +297,10 @@ function spawnNPC() {
 // Respawn NPC
 // Spawns an NPC within a weighted random of other NPCs
 function respawnNPC() {
-	var x, y, s, xavg, yavg;
+	var x, y, s;
+
+	//Calculate the average sprite locations
+	var xavg = 0, yavg = 0;
 	for (var i = 0; i < spriteQueue.length; i++) {
 		xavg = xavg + spriteQueue[i].x;
 		yavg = yavg + spriteQueue[i].y;
@@ -304,20 +308,21 @@ function respawnNPC() {
 	xavg = xavg / spriteQueue.length;
 	yavg = yavg / spriteQueue.length;
 
-	console.log("XAvg: " + xavg + " YAvg: " + yavg);
-	
-
-	//Choose a random location within a 250 circle of the average, then check to make sure its inside the canvas
+	//Choose a random location within the enemyRadius circle of the average, then check to make sure its inside the canvas
 	while (!(x >= 0 && y >= 0 && (x + spriteImage.width) <= canvas.width && (y + spriteImage.height) <= canvas.height))
 	{
-		var radius = 250;
-		x = Math.random() * 2 * radius - radius + xavg;
-		ylim = Math.sqrt(radius * radius - x * x);
-		y = Math.random() * 2 * ylim - ylim + yavg;
-	}
+		var ylim;
+		x = Math.random() * 2 * enemyRadius - enemyRadius;
+		ylim = Math.sqrt(Math.pow(enemyRadius, 2) - Math.pow(x, 2));
+		y = Math.random() * 2 * ylim - ylim;
 
+		//Now that we've come up with a random location in a circle, add the average locations
+		x = x + xavg;
+		y = y + yavg;
+	};
+
+	//Make the sprite and push it to the spriteQueue
 	s = new Sprite(x, y, spriteImage);
-	
 	spriteQueue.push(s);
 }
 
