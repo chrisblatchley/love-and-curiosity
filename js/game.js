@@ -27,6 +27,7 @@ var keysDown = new Array(222);	// A Boolean array to show which keys are pressed
 //
 // Game Constants
 var Direction = { Up:0, Down:1, Left:2, Right: 3 };
+var spriteImage = loadImage("media/sprite.png");
 
 //*****************************************************************************
 //*****************************************************************************
@@ -46,6 +47,14 @@ function loadImage(imageURI) {
 	img.src = imageURI;
 	return img;
 }
+
+
+// Array Remove - By John Resig (MIT Licensed)
+Array.prototype.remove = function(from, to) {
+  var rest = this.slice((to || from) + 1 || this.length);
+  this.length = from < 0 ? this.length + from : from;
+  return this.push.apply(this, rest);
+};
 
 //
 // Game Functions
@@ -109,6 +118,7 @@ function gameLoop() {
 function updateGame() {
 
 	// Update Laser Positions
+	laser_loop:
 	for (var i = laserQueue.length - 1; i >= 0; i--) {
 		var l = laserQueue[i];
 
@@ -116,35 +126,48 @@ function updateGame() {
 		var dx = Math.sin(l.theta) * l.speed;
 	   	var dy = Math.cos(l.theta) * l.speed;
 
-	   	// Check for collisions with nearby enemies
-	   	for (var j = spriteQueue.length - 1; j >= 0; j--) {
-	   		if( l.x > spriteQueue[j].x - 10 && l.x < spriteQueue[j].x + spriteQueue[j].image.width + 10 &&
-	   			l.y > spriteQueue[j].y - 10 && l.y < spriteQueue[j].y + spriteQueue[j].image.height + 10 )
-	   		{
-	   			// Find an exact calculation of where the collision happened
-	   			for (var i = 1; i <= l.speed; i++) {
-	   				var x = Math.sin(l.theta) * i;
-	   				var y = Math.cos(l.theta) * i;
-	   				if( l.x + x > spriteQueue[j].x && l.x + x < spriteQueue[j].x + spriteQueue[j].image.width &&
-	   					l.y - y > spriteQueue[j].y && l.y - y < spriteQueue[j].y + spriteQueue[j].image.height)
-	   				{
-	   					// Create new hit and add it to sprite queue
-	   					// var hit = new Sprite(l.x + x, l.y - y, new Image());
-	   					// spriteQueue.push(hit);
-	   					console.log("HIT!!");
-	   					//laserQueue[i] = null;
-	   					break;
-	   				}
-	   			};
-	   		}
-	   	};
+	   	//Do we have any enemies to check collisions with?
+	   	if (spriteQueue.length != 0)
+	   	{
+	   		// Check for collisions with nearby enemies
+		   	enemycheck_loop:
+		   	for (var j = spriteQueue.length - 1; j >= 0; j--) {
+		   		if( l.x > spriteQueue[j].x - 20 && l.x < spriteQueue[j].x + spriteQueue[j].image.width + 20 &&
+		   			l.y > spriteQueue[j].y - 20 && l.y < spriteQueue[j].y + spriteQueue[j].image.height + 20 )
+		   		{
+		   			// Find an exact calculation of where the collision happened
+		   			detailcheck_loop:
+		   			for (var k = 1; k <= l.speed; k++) {
+		   				var x = Math.sin(l.theta) * k;
+		   				var y = Math.cos(l.theta) * k;
+		   				if( l.x + x > spriteQueue[j].x && l.x + x < spriteQueue[j].x + spriteQueue[j].image.width &&
+		   					l.y - y > spriteQueue[j].y && l.y - y < spriteQueue[j].y + spriteQueue[j].image.height)
+		   				{
+		   					// Create new hit and add it to sprite queue
+		   					// var hit = new Sprite(l.x + x, l.y - y, new Image());
+		   					// spriteQueue.push(hit);
+		   					console.log("HIT enemy " + j + " at x: " + x + " and y: " + y);
+
+		   					//Delete laser
+		   					laserQueue.remove(i);
+		   					//Kill enemy
+		   					spriteQueue.remove(j)
+		   					//Spawn a new NPC
+		   					respawnNPC();
+		   					//Skip checking other enemies
+		   					continue laser_loop;
+		   				}
+		   			};
+		   		}
+		   	};
+	   	}
 
 		l.x += dx;
 	   	l.y -= dy;
 
 	   	// Remove laser if out of bounds
 	   	if(l.x < 0 || l.x > canvas.width || l.y < 0 || l.y > canvas.width) {
-	   		laserQueue[i] = null;
+	   		laserQueue.remove(i);
 	   	}
 	};
 
@@ -259,7 +282,35 @@ function spawnNPC() {
 	var x, y, s;
 	x = Math.random() * 10000 % canvas.width;
 	y = Math.random() * 10000 % canvas.height;
-	s = new Sprite(x, y, loadImage("media/sprite.png"));
+	s = new Sprite(x, y, spriteImage);
+	spriteQueue.push(s);
+}
+
+// Respawn NPC
+// Spawns an NPC within a weighted random of other NPCs
+function respawnNPC() {
+	var x, y, s, xavg, yavg;
+	for (var i = 0; i < spriteQueue.length; i++) {
+		xavg = xavg + spriteQueue[i].x;
+		yavg = yavg + spriteQueue[i].y;
+	};
+	xavg = xavg / spriteQueue.length;
+	yavg = yavg / spriteQueue.length;
+
+	console.log("XAvg: " + xavg + " YAvg: " + yavg);
+	
+
+	//Choose a random location within a 250 circle of the average, then check to make sure its inside the canvas
+	while (!(x >= 0 && y >= 0 && (x + spriteImage.width) <= canvas.width && (y + spriteImage.height) <= canvas.height))
+	{
+		var radius = 250;
+		x = Math.random() * 2 * radius - radius + xavg;
+		ylim = Math.sqrt(radius * radius - x * x);
+		y = Math.random() * 2 * ylim - ylim + yavg;
+	}
+
+	s = new Sprite(x, y, spriteImage);
+	
 	spriteQueue.push(s);
 }
 
