@@ -69,6 +69,14 @@ Array.prototype.removeObject = function(object) {
 }
 
 //
+// Fade in Top Message
+function displayMessage(message, time) {
+	var overlay = $("#overlay");
+	overlay.html(message);
+	overlay.fadeIn(2000).delay(time).fadeOut(2000);
+}
+
+//
 // Game Functions
 //
 
@@ -82,6 +90,9 @@ function initGame() {
 	// Set canvas proper width and height
 	canvas.width = $("#game").width();
 	canvas.height = $("#game").height();
+
+	// Display Welcome Message
+	displayMessage("Welcome to Mars. You are the Curiosity Rover. Use WASD to move, and space to fire your laser!", 5000);
 
 	// Setup player sprite
 	player = new Sprite();
@@ -99,7 +110,7 @@ function initGame() {
 		spawnNPC();
 	}
 
-	$(document).keydown(function (e) { eventQueue.push(e); });
+	$(document).keydown(function (e) { eventQueue.push(e); if(e.which == 32) e.preventDefault(); });
 	$(document).keyup(function (e) { eventQueue.push(e) });
 
 	setInterval(gameLoop, 15);
@@ -220,7 +231,7 @@ function updateGame() {
 		spriteQueue[i].y = spriteQueue[i].y + Math.cos(Math.atan2(player.x - (spriteQueue[i].x + spriteQueue[i].image.width / 2), player.y - (spriteQueue[i].y + spriteQueue[i].image.height / 2))) * spriteQueue[i].speed;
 	};
 
-	console.log(hasLoS(0, canvas.width, 0, canvas.height));
+	hasLoS(canvas.width, 0, canvas.height, 0);
 }
 
 //
@@ -252,7 +263,7 @@ function drawScreen() {
 
 	// Draw Lasers
 	ctx.strokeStyle = "red";
-	ctx.lineWidth = 2;
+	ctx.lineWidth = 3;
 	ctx.beginPath();
 	for (var i = laserQueue.length - 1; i >= 0; i--) {
 		var l = laserQueue[i];
@@ -405,7 +416,7 @@ function respawnNPC() {
 // See if we have a straight shot from one point to another, used for enemy burrowing and projectile decisions.
 function hasLoS(x1, x2, y1, y2)
 {
-	var i, xc, yc, objTheta;
+	var i, xc, yc, objTheta, isClear = true;
 	//First, calculate pythagorean distance between the two points
 	var dist = Math.round(Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)));
 
@@ -415,13 +426,17 @@ function hasLoS(x1, x2, y1, y2)
 	//Incrementally check an area to see if there is anything blocking LoS
 	for (i = 0; i < dist; i+=5)
 	{
-		xc = x1 + Math.sin(objTheta) * i;
-		yc = y1 + Math.cos(objTheta) * i;
-		$("#message").html("Checking LoS x: " + xc + " y: " + yc);
-		if(!isCollidingWithObject(xc, yc))
-			return true;
+		xc = x1 - Math.sin(objTheta) * i;
+		yc = y1 - Math.cos(objTheta) * i;
+		if(!isCollidingWithObject(xc, yc) && isClear) {
+			$("#message").html("Clear");
+			isClear = true;
+		} else {
+			$("#message").html("Blocked");
+			isClear = false;
+		}
 	};
-	return false;
+	return isClear;
 }
 
 //*****************************************************************************
@@ -442,7 +457,7 @@ function Laser(x, y, theta) {
 	this.x = x;
 	this.y = y;
 	this.theta = theta;
-	this.size = 5;
+	this.size = 15;
 	this.speed = 20;
 }
 
