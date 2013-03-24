@@ -1,0 +1,14 @@
+Feature List:
+Add terrain to maps (Rocks, bushes)
+	Terrain will be destroyable by lasers (multiple hits)
+	Collect resources/explore by destroying terrain
+Create enemy and curiosity sprites
+	Add explosions
+Create new enemy features
+	Burrowing under objects
+	Different types of enemies (like ones that don't move)
+Add objectives
+	Eliminating enemies
+	Moving to specific location
+	Exploring/resource gathering
+Make the game losable
