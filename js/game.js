@@ -23,15 +23,8 @@ var spriteQueue = [];
 var laserQueue = [];
 var eventQueue = []
 var keysDown = new Array(222);	// A Boolean array to show which keys are pressed
-var levels = [
-	new Level( 2, 0, 2, NO_ENEMIES, NO_LOCATION),
-	new Level( 5, 0, 5, NO_ENEMIES, NO_LOCATION),
-	new Level( 2, 1, NO_PICKUPS, 1, NO_LOCATION),
-	new Level( 5, 3, 5, 3, NO_LOCATION)
-];
+var levels = [];
 var level;
-
-// function Level(landCount, enemyCount, pickupsNeeded, enemiesNeeded, location)
 
 // Load Media
 var playerImage = loadImage("media/car.png");
@@ -127,10 +120,22 @@ function initGame() {
 	player.shotCounter = 0;
 	player.safeArea = 300;
 
-	// Dequeue first level
+	// Create Levels
+	levels = [
+		new Level( 2, 0, 2, NO_ENEMIES),
+		new Level( 5, 0, 5, NO_ENEMIES),
+		new Level( 2, 1, NO_PICKUPS, 1),
+		new Level( 5, 3, 5, 3)
+	];
 
+	// Start First Level
+	buildNextLevel(level);
 
-	$(document).keydown(function (e) { eventQueue.push(e); if(e.which == 32) e.preventDefault(); });
+	$(document).keydown(function (e) {
+		eventQueue.push(e);
+		if(e.which == 32 || e.which == 37 || e.which == 40)
+			e.preventDefault();
+	});
 	$(document).keyup(function (e) { eventQueue.push(e) });
 
 	setInterval(gameLoop, 15);
@@ -200,7 +205,9 @@ function updateGame() {
 			   					if(spriteQueue[j].hp <= 0) {
 			   						// If Enemy then respawn
 				   					if(spriteQueue[j].type == ENEMY_TYPE) {
-				   						respawnNPC();
+				   						level.enemiesNeeded --;
+				   						if(level.enemiesNeeded > 0)
+				   							respawnNPC();
 				   					}
 
 			   						// If Terrain the drop pickup
@@ -277,7 +284,23 @@ function updateGame() {
 					}
 				}
 			}
+			else if( s.type == PICKUP_TYPE) {
+				if( locationOverlap (	player.x - player.image.width, player.x,
+										player.y - player.image.height, player.y,
+										s.x, s.x + s.image.width,
+										s.y, s.y + s.image.height)) {
+					spriteQueue.remove(i);
+					level.pickupsNeeded--;
+				}
+			}
 		};
+		$("#message").html("Pickups Needed: " + level.pickupsNeeded + " Enemies Needed: " + levels.enemiesNeeded);
+
+		if(level.isComplete()) {
+			displayMessage("Level 2: Do some more research");
+			spriteQueue = [];
+			buildLevel();
+		}
 }
 
 //
@@ -562,20 +585,37 @@ function Laser(x, y, theta) {
 //
 // Level object
 function Level(landCount, enemyCount, pickupsNeeded, enemiesNeeded, location) {
-	this.landCount = 0;
-	this.enemyCount = 0;
+	this.landCount = landCount;
+	this.enemyCount = enemyCount;
 	this.location = location;
 	this.pickupsNeeded = pickupsNeeded;
 	this.enemiesNeeded = enemiesNeeded;
+	if(typeof location == "undefined") {
+		this.hasLocationObjective = false;
+	} else {
+		this.hasLocationObjective = true;
+	}
 	this.isComplete = function () {
 		if (pickupsNeeded > 0) return false;
 		if (enemiesNeeded > 0) return false;
-		if ( !locationOverlap(	player.x, player.x + player.image.width,
-								player.y, player.y + player.image.y,
+		if (!locationOverlap(	player.x - player.image.width, player.x,
+								player.y - player.image.y, player.y,
 								this.location.x, this.location.x + this.location.size,
-								this.location.y, this.location.y + this.location.size)) {
+								this.location.y, this.location.y + this.location.size) && this.hasLocationObjective) {
 			return false;
 		}
-		else return true;
+		return true;
+	}
+}
+
+//
+// Build a level
+function buildNextLevel() {
+	level = levels.shift();
+	for(var i = 0; i < level.landCount; i++) {
+		spawnTerrain();
+	}
+	for(var i = 0; i < level.enemyCount; i++) {
+		respawnNPC();
 	}
 }
