@@ -28,6 +28,7 @@ var keysDown = new Array(222);	// A Boolean array to show which keys are pressed
 var playerImage = loadImage("media/car.png");
 var enemyImage = loadImage("media/sprite.png");
 var tileBack = loadImage("media/rocktile.png");
+var brownRock = loadImage("media/brownrock.png");
 
 //
 // Game Constants
@@ -114,6 +115,11 @@ function initGame() {
 	for(var i = 0; i < 2; i++) {
 		spawnNPC();
 	}
+
+	for(var i = 0; i < 20; i++) {
+		spawnTerrain();
+	}
+
 
 	$(document).keydown(function (e) { eventQueue.push(e); if(e.which == 32) e.preventDefault(); });
 	$(document).keyup(function (e) { eventQueue.push(e) });
@@ -329,18 +335,31 @@ function spawnNPC() {
 	{
 		s.x = Math.random() * 10000 % canvas.width;
 		s.y = Math.random() * 10000 % canvas.height;
-	}while (!isInsideCanvas(s) && !isCollidingWithObject(s.x, s.y) && !isInSafeArea(s));
+	}while (!isInsideCanvas(s) || isCollidingWithObject(s.x, s.y, enemyImage.width, enemyImage.height) || isInSafeArea(s));
+	
+	spriteQueue.push(s);
+}
+
+// Spawn NPC
+function spawnTerrain() {
+	var x, y, s;
+	s = new Sprite(LANDSCAPE_TYPE, 0, 0, brownRock);
+	do
+	{
+		s.x = Math.random() * 10000 % canvas.width;
+		s.y = Math.random() * 10000 % canvas.height;
+	}while (!isInsideCanvas(s) || isCollidingWithObject(s.x, s.y, brownRock.width, brownRock.height) || isInSafeArea(s));
 	
 	spriteQueue.push(s);
 }
 
 // Check for a location overlap
 // See if two boxes overlap each other
-function locationOverlap(ax1, ax2, ay1, ay2, bx1, bx2, by1, by2) {
-	if (ax2 < bx1) return false;
-	if (ax1 > bx2) return false;
-	if (ay2 < by1) return false;
-	if (ay1 > by2) return false;
+function locationOverlap(aLeft, aRight, aTop, aBottom, bLeft, bRight, bTop, bBottom) {
+	if (aRight < bLeft) return false;
+	if (aLeft > bRight) return false;
+	if (aBottom < bTop) return false;
+	if (aTop > bBottom) return false;
 	return true;
 }
 
@@ -348,17 +367,18 @@ function locationOverlap(ax1, ax2, ay1, ay2, bx1, bx2, by1, by2) {
 // Ensures a sprite spawns within a legal area and not on top of another sprite
 // Returns false if no collisions are detected
 // Returns true if a collision is detected
-function isCollidingWithObject(checkX, checkY) {
+function isCollidingWithObject(checkX, checkY, checkWidth, checkHeight) {
 		//Do we include the player in the calculation?
 		//Are we spawning too close to the player?
-
+		
 		//Check the existing sprites to ensure no overlap
 		for (var i = 0; i < spriteQueue.length; i++) 
 		{
+			console.log("I am checking overlap");
 			if (locationOverlap(	checkX,
-									(checkX + enemyImage.width), 
+									(checkX + checkWidth), 
 									checkY, 
-									(checkY + enemyImage.height), 
+									(checkY + checkHeight), 
 									spriteQueue[i].x, 
 									(spriteQueue[i].x + spriteQueue[i].image.width), 
 									spriteQueue[i].y, 
@@ -415,7 +435,7 @@ function respawnNPC() {
 		//Now that we've come up with a random location in a circle, add the average locations
 		s.x += xavg;
 		s.y += yavg;
-	} while (!isInsideCanvas(s) && !isCollidingWithObject(s.x, s.y) && !isInSafeArea(s));
+	} while (!isInsideCanvas(s) || isCollidingWithObject(s.x, s.y, enemyImage.width, enemyImage.height) || isInSafeArea(s) );
 
 	//Make the sprite and push it to the spriteQueue
 	spriteQueue.push(s);
@@ -436,7 +456,7 @@ function hasLoS(x1, x2, y1, y2) {
 	{
 		xc = x1 - Math.cos(objTheta) * i;
 		yc = y1 - Math.sin(objTheta) * i;
-		if(!isCollidingWithObject(xc, yc) && isClear) {
+		if(!isCollidingWithObject(xc, yc, 0, 0) && isClear) {
 			isClear = true;
 		} else {
 			isClear = false;
