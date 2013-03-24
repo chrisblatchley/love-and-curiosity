@@ -23,6 +23,15 @@ var spriteQueue = [];
 var laserQueue = [];
 var eventQueue = []
 var keysDown = new Array(222);	// A Boolean array to show which keys are pressed
+var levels = [
+	new Level( 2, 0, 2, NO_ENEMIES, NO_LOCATION),
+	new Level( 5, 0, 5, NO_ENEMIES, NO_LOCATION),
+	new Level( 2, 1, NO_PICKUPS, 1, NO_LOCATION),
+	new Level( 5, 3, 5, 3, NO_LOCATION)
+];
+var level;
+
+// function Level(landCount, enemyCount, pickupsNeeded, enemiesNeeded, location)
 
 // Load Media
 var playerImage = loadImage("media/car.png");
@@ -30,6 +39,7 @@ var enemyImage = loadImage("media/sprite.png");
 var tileBack = loadImage("media/rocktile.png");
 var brownRock = loadImage("media/brownrock.png");
 var explodeImage = loadImage("media/explode.png");
+var diamondImage = loadImage("media/diamond.png");
 
 //
 // Game Constants
@@ -40,6 +50,10 @@ var ENEMY_TYPE = "enemy";
 var PROJECTILE_TYPE = "projectile";
 var LANDSCAPE_TYPE = "landscape";
 var EXPLOSION_TYPE = "explosion";
+var PICKUP_TYPE = "pickup";
+var NO_ENEMIES = -1;
+var NO_PICKUPS = -1;
+var NO_LOCATION = {x:-100, y:-1000, size: 0};
 
 
 //*****************************************************************************
@@ -113,14 +127,7 @@ function initGame() {
 	player.shotCounter = 0;
 	player.safeArea = 300;
 
-	// Create some random NPCs
-	for(var i = 0; i < 2; i++) {
-		spawnNPC();
-	}
-
-	for(var i = 0; i < 20; i++) {
-		spawnTerrain();
-	}
+	// Dequeue first level
 
 
 	$(document).keydown(function (e) { eventQueue.push(e); if(e.which == 32) e.preventDefault(); });
@@ -185,10 +192,24 @@ function updateGame() {
 			   				{
 		 						//Delete laser, remove sprite, create explosion and respawn
 			   					laserQueue.remove(i);
-			   					//Kill enemy
-			   					spriteQueue.remove(j)
 			   					createExplosion(l.x, l.y);
-			   					respawnNPC();
+
+		   						spriteQueue[j].hp --;
+
+			   					// Remove sprite if health gone
+			   					if(spriteQueue[j].hp <= 0) {
+			   						// If Enemy then respawn
+				   					if(spriteQueue[j].type == ENEMY_TYPE) {
+				   						respawnNPC();
+				   					}
+
+			   						// If Terrain the drop pickup
+				   					if(spriteQueue[j].type == LANDSCAPE_TYPE) {
+				   						createPickup(spriteQueue[j].x + spriteQueue[j].image.width/2, spriteQueue[j].y + spriteQueue[j].image.height/2);
+				   					}
+		   							spriteQueue.remove(j);
+		   						}
+
 			   					//Skip checking other enemies
 			   					continue laser_loop;
 			   				}
@@ -350,6 +371,7 @@ function shoot(x, y, theta) {
 function spawnNPC() {
 	var x, y, s;
 	s = new Sprite(ENEMY_TYPE, 0, 0, enemyImage);
+	s.hp = 2;
 	do
 	{
 		s.x = Math.random() * 10000 % canvas.width;
@@ -363,6 +385,7 @@ function spawnNPC() {
 function spawnTerrain() {
 	var x, y, s;
 	s = new Sprite(LANDSCAPE_TYPE, 0, 0, brownRock);
+	s.hp = 3;
 	do
 	{
 		s.x = Math.random() * 10000 % canvas.width;
@@ -377,6 +400,13 @@ function spawnTerrain() {
 function createExplosion(x,y) {
 	var explosion = new SpriteMap(EXPLOSION_TYPE, x, y, explodeImage, 66, 64, 1, 6);
 	spriteQueue.push(explosion);
+}
+
+// 
+// Create Pickup item
+function createPickup(x,y) {
+	var pickup = new Sprite(PICKUP_TYPE, x - diamondImage.width / 2, y - diamondImage.height / 2, diamondImage);
+	spriteQueue.push(pickup);
 }
 
 // Check for a location overlap
@@ -435,6 +465,7 @@ function isInSafeArea(myObj) {
 function respawnNPC() {
 	var s;
 	s = new Sprite(ENEMY_TYPE, 0, 0, enemyImage);
+	s.hp = 2;
 
 	//Calculate the average sprite locations
 	var xavg = 0, yavg = 0, enemyCount = 0;
@@ -501,6 +532,7 @@ function Sprite (type, x, y, image) {
 	this.y = y;
 	this.speed = 0.50;
 	this.image = image;
+	this.hp = 1;
 }
 
 function SpriteMap(type, x, y, image, imagex, imagey, rows, cols) {
@@ -525,4 +557,25 @@ function Laser(x, y, theta) {
 	this.theta = theta;
 	this.size = 15;
 	this.speed = 20;
+}
+
+//
+// Level object
+function Level(landCount, enemyCount, pickupsNeeded, enemiesNeeded, location) {
+	this.landCount = 0;
+	this.enemyCount = 0;
+	this.location = location;
+	this.pickupsNeeded = pickupsNeeded;
+	this.enemiesNeeded = enemiesNeeded;
+	this.isComplete = function () {
+		if (pickupsNeeded > 0) return false;
+		if (enemiesNeeded > 0) return false;
+		if ( !locationOverlap(	player.x, player.x + player.image.width,
+								player.y, player.y + player.image.y,
+								this.location.x, this.location.x + this.location.size,
+								this.location.y, this.location.y + this.location.size)) {
+			return false;
+		}
+		else return true;
+	}
 }
