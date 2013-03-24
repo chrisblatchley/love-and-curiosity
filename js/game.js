@@ -282,7 +282,13 @@ function drawScreen() {
 	// Draw Basic Sprites
 	for (var i = spriteQueue.length - 1; i >= 0; i--) {
 		var e = spriteQueue[i];
-		ctx.drawImage(e.image, e.x, e.y);
+		if(e.type == EXPLOSION_TYPE) {
+			var x = (e.phase % e.cols) * e.imagex;
+			var y = (Math.floor(e.phase / e.cols)) * e.imagey;
+			ctx.drawImage(e.image, x, y, e.imagex, e.imagey, e.x - e.imagex/2, e.y - e.imagey/2, e.imagex, e.imagey);
+		} else {
+			ctx.drawImage(e.image, e.x, e.y);
+		}
 	};
 
 	// Draw Lasers
