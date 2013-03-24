@@ -29,6 +29,7 @@ var playerImage = loadImage("media/car.png");
 var enemyImage = loadImage("media/sprite.png");
 var tileBack = loadImage("media/rocktile.png");
 var brownRock = loadImage("media/brownrock.png");
+var explodeImage = loadImage("media/explode.png");
 
 //
 // Game Constants
@@ -38,6 +39,7 @@ var PLAYER_TYPE = "player";
 var ENEMY_TYPE = "enemy";
 var PROJECTILE_TYPE = "projectile";
 var LANDSCAPE_TYPE = "landscape";
+var EXPLOSION_TYPE = "explosion";
 
 
 //*****************************************************************************
@@ -178,13 +180,14 @@ function updateGame() {
 			   				var x = Math.sin(l.theta) * k;
 			   				var y = Math.cos(l.theta) * k;
 			   				if( l.x + x > spriteQueue[j].x && l.x + x < spriteQueue[j].x + spriteQueue[j].image.width &&
-			   					l.y - y > spriteQueue[j].y && l.y - y < spriteQueue[j].y + spriteQueue[j].image.height)
+			   					l.y - y > spriteQueue[j].y && l.y - y < spriteQueue[j].y + spriteQueue[j].image.height &&
+			   					(spriteQueue[j].type == ENEMY_TYPE || spriteQueue[j].type == LANDSCAPE_TYPE))
 			   				{
-			   					//Delete laser
+		 						//Delete laser, remove sprite, create explosion and respawn
 			   					laserQueue.remove(i);
 			   					//Kill enemy
 			   					spriteQueue.remove(j)
-			   					//Spawn a new NPC
+			   					createExplosion(l.x, l.y);
 			   					respawnNPC();
 			   					//Skip checking other enemies
 			   					continue laser_loop;
@@ -242,6 +245,16 @@ function updateGame() {
 				//Move NPCs towards the player
 				s.x = s.x - Math.sin(Math.atan2((s.x + s.image.width / 2) - player.x, player.y - (s.y + s.image.height / 2))) * s.speed;
 				s.y = s.y + Math.cos(Math.atan2(player.x - (s.x + s.image.width / 2), player.y - (s.y + s.image.height / 2))) * s.speed;
+			}
+			else if( s.type == EXPLOSION_TYPE) {
+				s.phaseCounter--;
+				if(s.phaseCounter <= 0) {
+					s.phaseCounter = s.rows * s.cols;
+					s.phase = (s.phase + 1) % (s.rows * s.cols);
+					if(s.phase == (s.rows * s.cols) - 1) {
+						spriteQueue.remove(i);
+					}
+				}
 			}
 		};
 }
@@ -353,6 +366,13 @@ function spawnTerrain() {
 	spriteQueue.push(s);
 }
 
+//
+// Create Explosion
+function createExplosion(x,y) {
+	var explosion = new SpriteMap(EXPLOSION_TYPE, x, y, explodeImage, 66, 64, 1, 6);
+	spriteQueue.push(explosion);
+}
+
 // Check for a location overlap
 // See if two boxes overlap each other
 function locationOverlap(aLeft, aRight, aTop, aBottom, bLeft, bRight, bTop, bBottom) {
@@ -370,11 +390,10 @@ function locationOverlap(aLeft, aRight, aTop, aBottom, bLeft, bRight, bTop, bBot
 function isCollidingWithObject(checkX, checkY, checkWidth, checkHeight) {
 		//Do we include the player in the calculation?
 		//Are we spawning too close to the player?
-		
+
 		//Check the existing sprites to ensure no overlap
 		for (var i = 0; i < spriteQueue.length; i++) 
 		{
-			console.log("I am checking overlap");
 			if (locationOverlap(	checkX,
 									(checkX + checkWidth), 
 									checkY, 
@@ -476,6 +495,20 @@ function Sprite (type, x, y, image) {
 	this.y = y;
 	this.speed = 0.50;
 	this.image = image;
+}
+
+function SpriteMap(type, x, y, image, imagex, imagey, rows, cols) {
+	this.type = type;
+	this.x = x;
+	this.y = y;
+	this.speed = 0.50;
+	this.image = image;
+	this.imagex = imagex;
+	this.imagey = imagey;
+	this.rows = rows;
+	this.cols = cols;
+	this.phase = 0;
+	this.phaseCounter = rows*cols;
 }
 
 //
