@@ -230,8 +230,6 @@ function updateGame() {
 		spriteQueue[i].x = spriteQueue[i].x - Math.sin(Math.atan2((spriteQueue[i].x + spriteQueue[i].image.width / 2) - player.x, player.y - (spriteQueue[i].y + spriteQueue[i].image.height / 2))) * spriteQueue[i].speed;
 		spriteQueue[i].y = spriteQueue[i].y + Math.cos(Math.atan2(player.x - (spriteQueue[i].x + spriteQueue[i].image.width / 2), player.y - (spriteQueue[i].y + spriteQueue[i].image.height / 2))) * spriteQueue[i].speed;
 	};
-
-	hasLoS(canvas.width, 0, canvas.height, 0);
 }
 
 //
@@ -426,8 +424,8 @@ function hasLoS(x1, x2, y1, y2)
 	//Incrementally check an area to see if there is anything blocking LoS
 	for (i = 0; i < dist; i+=5)
 	{
-		xc = x1 - Math.sin(objTheta) * i;
-		yc = y1 - Math.cos(objTheta) * i;
+		xc = x1 - Math.cos(objTheta) * i;
+		yc = y1 - Math.sin(objTheta) * i;
 		if(!isCollidingWithObject(xc, yc) && isClear) {
 			$("#message").html("Clear");
 			isClear = true;
