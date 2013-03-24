@@ -167,11 +167,6 @@ function updateGame() {
 		   				if( l.x + x > spriteQueue[j].x && l.x + x < spriteQueue[j].x + spriteQueue[j].image.width &&
 		   					l.y - y > spriteQueue[j].y && l.y - y < spriteQueue[j].y + spriteQueue[j].image.height)
 		   				{
-		   					// Create new hit and add it to sprite queue
-		   					// var hit = new Sprite(l.x + x, l.y - y, new Image());
-		   					// spriteQueue.push(hit);
-		   					console.log("HIT enemy " + j + " at x: " + x + " and y: " + y);
-
 		   					//Delete laser
 		   					laserQueue.remove(i);
 		   					//Kill enemy
@@ -427,10 +422,8 @@ function hasLoS(x1, x2, y1, y2)
 		xc = x1 - Math.cos(objTheta) * i;
 		yc = y1 - Math.sin(objTheta) * i;
 		if(!isCollidingWithObject(xc, yc) && isClear) {
-			$("#message").html("Clear");
 			isClear = true;
 		} else {
-			$("#message").html("Blocked");
 			isClear = false;
 		}
 	};
