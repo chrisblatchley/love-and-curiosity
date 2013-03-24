@@ -24,12 +24,20 @@ var laserQueue = [];
 var eventQueue = []
 var keysDown = new Array(222);	// A Boolean array to show which keys are pressed
 
+// Load Media
+var playerImage = loadImage("media/car.png");
+var enemyImage = loadImage("media/sprite.png");
+var tileBack = loadImage("media/rocktile.png");
+
 //
 // Game Constants
 var Direction = { Up:0, Down:1, Left:2, Right: 3 };
-var spriteImage = loadImage("media/sprite.png");
-var tileBack = loadImage("media/rocktile.png");
 var enemyRadius = 300;
+var PLAYER_TYPE = "player";
+var ENEMY_TYPE = "enemy";
+var PROJECTILE_TYPE = "projectile";
+var LANDSCAPE_TYPE = "landscape";
+
 
 //*****************************************************************************
 //*****************************************************************************
@@ -92,21 +100,18 @@ function initGame() {
 	canvas.height = $("#game").height();
 
 	// Display Welcome Message
-	displayMessage("Welcome to Mars. You are the Curiosity Rover. Use WASD to move, and space to fire your laser!", 5000);
+	displayMessage("Welcome to Mars. You are the Curiosity Rover. Use the Arrow Keys to move, and Shift to fire your laser!", 5000);
 
 	// Setup player sprite
-	player = new Sprite();
-	player.image = loadImage("media/car.png");
-	player.x = canvas.width / 2 - player.image.width / 2;
-	player.y = canvas.height / 2 - player.image.height / 2;
+	player = new Sprite(PLAYER_TYPE, canvas.width / 2 - playerImage.width / 2, canvas.height / 2 - playerImage.height / 2, playerImage);
 	player.theta = 0;
 	player.forwardSpeed = 4;
 	player.rotateSpeed = 0.06;
 	player.shotCounter = 0;
-	player.safeArea = 100
+	player.safeArea = 300;
 
 	// Create some random NPCs
-	for(var i = 0; i < 6; i++) {
+	for(var i = 0; i < 2; i++) {
 		spawnNPC();
 	}
 
@@ -116,6 +121,8 @@ function initGame() {
 	setInterval(gameLoop, 15);
 }
 
+//
+// Main Game Loop
 function gameLoop() {
 	//Handle Events
 	if(eventQueue.length > 0) {
@@ -142,89 +149,95 @@ function gameLoop() {
 function updateGame() {
 
 	// Update Laser Positions
-	laser_loop:
-	for (var i = laserQueue.length - 1; i >= 0; i--) {
-		var l = laserQueue[i];
+		laser_loop:
+		for (var i = laserQueue.length - 1; i >= 0; i--) {
+			var l = laserQueue[i];
 
-		// Calculate next laser location
-		var dx = Math.sin(l.theta) * l.speed;
-	   	var dy = Math.cos(l.theta) * l.speed;
+			// Calculate next laser location
+			var dx = Math.sin(l.theta) * l.speed;
+		   	var dy = Math.cos(l.theta) * l.speed;
 
-	   	//Do we have any enemies to check collisions with?
-	   	if (spriteQueue.length != 0)
-	   	{
-	   		// Check for collisions with nearby enemies
-		   	enemycheck_loop:
-		   	for (var j = spriteQueue.length - 1; j >= 0; j--) {
-		   		if( l.x > spriteQueue[j].x - 20 && l.x < spriteQueue[j].x + spriteQueue[j].image.width + 20 &&
-		   			l.y > spriteQueue[j].y - 20 && l.y < spriteQueue[j].y + spriteQueue[j].image.height + 20 )
-		   		{
-		   			// Find an exact calculation of where the collision happened
-		   			detailcheck_loop:
-		   			for (var k = 1; k <= l.speed; k++) {
-		   				var x = Math.sin(l.theta) * k;
-		   				var y = Math.cos(l.theta) * k;
-		   				if( l.x + x > spriteQueue[j].x && l.x + x < spriteQueue[j].x + spriteQueue[j].image.width &&
-		   					l.y - y > spriteQueue[j].y && l.y - y < spriteQueue[j].y + spriteQueue[j].image.height)
-		   				{
-		   					//Delete laser
-		   					laserQueue.remove(i);
-		   					//Kill enemy
-		   					spriteQueue.remove(j)
-		   					//Spawn a new NPC
-		   					respawnNPC();
-		   					//Skip checking other enemies
-		   					continue laser_loop;
-		   				}
-		   			};
-		   		}
-		   	};
-	   	}
+		   	//Do we have any enemies to check collisions with?
+		   	if (spriteQueue.length != 0)
+		   	{
+		   		// Check for collisions with nearby enemies
+			   	enemycheck_loop:
+			   	for (var j = spriteQueue.length - 1; j >= 0; j--) {
+			   		if( l.x > spriteQueue[j].x - 20 && l.x < spriteQueue[j].x + spriteQueue[j].image.width + 20 &&
+			   			l.y > spriteQueue[j].y - 20 && l.y < spriteQueue[j].y + spriteQueue[j].image.height + 20 )
+			   		{
+			   			// Find an exact calculation of where the collision happened
+			   			detailcheck_loop:
+			   			for (var k = 1; k <= l.speed; k++) {
+			   				var x = Math.sin(l.theta) * k;
+			   				var y = Math.cos(l.theta) * k;
+			   				if( l.x + x > spriteQueue[j].x && l.x + x < spriteQueue[j].x + spriteQueue[j].image.width &&
+			   					l.y - y > spriteQueue[j].y && l.y - y < spriteQueue[j].y + spriteQueue[j].image.height)
+			   				{
+			   					//Delete laser
+			   					laserQueue.remove(i);
+			   					//Kill enemy
+			   					spriteQueue.remove(j)
+			   					//Spawn a new NPC
+			   					respawnNPC();
+			   					//Skip checking other enemies
+			   					continue laser_loop;
+			   				}
+			   			};
+			   		}
+			   	};
+		   	}
 
-		l.x += dx;
-	   	l.y -= dy;
+			l.x += dx;
+		   	l.y -= dy;
 
-	   	// Remove laser if out of bounds
-	   	if(l.x < 0 || l.x > canvas.width || l.y < 0 || l.y > canvas.width) {
-	   		laserQueue.remove(i);
-	   	}
-	};
+		   	// Remove laser if out of bounds
+		   	if(l.x < 0 || l.x > canvas.width || l.y < 0 || l.y > canvas.width) {
+		   		laserQueue.remove(i);
+		   	}
+		};
 
 	// handle Key Triggers
-	if(keysDown[65]) { // Left Arrow
-		movePlayer(Direction.Left);
-	}
-	if(keysDown[87]) { // Up Arrow
-		movePlayer(Direction.Up);
-	}
-	if(keysDown[68]) { // Right Arrow
-		movePlayer(Direction.Right);
-	}
-	if(keysDown[83]) { // Down Arrow
-		movePlayer(Direction.Down);
-	}
-	if(keysDown[32]) {
-		shoot(player.x - player.image.width / 2,
-			  player.y - player.image.height / 2,
-			  player.theta);
-	}
+		if(keysDown[37]) { // Left Arrow
+			movePlayer(Direction.Left);
+		}
+		if(keysDown[38]) { // Up Arrow
+			movePlayer(Direction.Up);
+		}
+		if(keysDown[39]) { // Right Arrow
+			movePlayer(Direction.Right);
+		}
+		if(keysDown[40]) { // Down Arrow
+			movePlayer(Direction.Down);
+		}
+		if(keysDown[16]) {
+			shoot(player.x - player.image.width / 2,
+				  player.y - player.image.height / 2,
+				  player.theta);
+		}
 
 	// Remove old lasers
-	var newQueue = [];
-	for (var i = laserQueue.length - 1; i >= 0; i--) {
-		if(laserQueue[i] != null) {
-			newQueue.push(laserQueue[i]);
-		}
-	};
-	laserQueue = newQueue;
-	if(player.shotCounter > 0) player.shotCounter--;	// Decrease shot counter
+		var newQueue = [];
+		for (var i = laserQueue.length - 1; i >= 0; i--) {
+			if(laserQueue[i] != null) {
+				newQueue.push(laserQueue[i]);
+			}
+		};
+		laserQueue = newQueue;
+		if(player.shotCounter > 0) player.shotCounter--;	// Decrease shot counter
 
-	//Move NPCs towards the player
-	for (var i = 0; i < spriteQueue.length; i++) 
-	{
-		spriteQueue[i].x = spriteQueue[i].x - Math.sin(Math.atan2((spriteQueue[i].x + spriteQueue[i].image.width / 2) - player.x, player.y - (spriteQueue[i].y + spriteQueue[i].image.height / 2))) * spriteQueue[i].speed;
-		spriteQueue[i].y = spriteQueue[i].y + Math.cos(Math.atan2(player.x - (spriteQueue[i].x + spriteQueue[i].image.width / 2), player.y - (spriteQueue[i].y + spriteQueue[i].image.height / 2))) * spriteQueue[i].speed;
-	};
+	
+	// Update All Sprites
+		for (var i = 0; i < spriteQueue.length; i++) 
+		{
+			var s = spriteQueue[i];
+			// Update Enemy Sprites
+			if( s.type == ENEMY_TYPE) {
+				//Move NPCs towards the player
+				s.x = s.x - Math.sin(Math.atan2((s.x + s.image.width / 2) - player.x, player.y - (s.y + s.image.height / 2))) * s.speed;
+				s.y = s.y + Math.cos(Math.atan2(player.x - (s.x + s.image.width / 2), player.y - (s.y + s.image.height / 2))) * s.speed;
+			}
+		};
 }
 
 //
@@ -247,8 +260,7 @@ function drawScreen() {
 	ctx.drawImage( player.image, 0, 0 );
 	ctx.restore();
 
-	// Draw Enemy Sprites
-	ctx.fillStyle = "#fff";
+	// Draw Basic Sprites
 	for (var i = spriteQueue.length - 1; i >= 0; i--) {
 		var e = spriteQueue[i];
 		ctx.drawImage(e.image, e.x, e.y);
@@ -312,7 +324,7 @@ function shoot(x, y, theta) {
 // Spawn NPC
 function spawnNPC() {
 	var x, y, s;
-	s = new Sprite(0, 0, spriteImage);
+	s = new Sprite(ENEMY_TYPE, 0, 0, enemyImage);
 	do
 	{
 		s.x = Math.random() * 10000 % canvas.width;
@@ -324,8 +336,7 @@ function spawnNPC() {
 
 // Check for a location overlap
 // See if two boxes overlap each other
-function locationOverlap(ax1, ax2, ay1, ay2, bx1, bx2, by1, by2)
-{
+function locationOverlap(ax1, ax2, ay1, ay2, bx1, bx2, by1, by2) {
 	if (ax2 < bx1) return false;
 	if (ax1 > bx2) return false;
 	if (ay2 < by1) return false;
@@ -337,8 +348,7 @@ function locationOverlap(ax1, ax2, ay1, ay2, bx1, bx2, by1, by2)
 // Ensures a sprite spawns within a legal area and not on top of another sprite
 // Returns false if no collisions are detected
 // Returns true if a collision is detected
-function isCollidingWithObject(checkX, checkY)
-{
+function isCollidingWithObject(checkX, checkY) {
 		//Do we include the player in the calculation?
 		//Are we spawning too close to the player?
 
@@ -346,9 +356,9 @@ function isCollidingWithObject(checkX, checkY)
 		for (var i = 0; i < spriteQueue.length; i++) 
 		{
 			if (locationOverlap(	checkX,
-									(checkX + spriteImage.width), 
+									(checkX + enemyImage.width), 
 									checkY, 
-									(checkY + spriteImage.height), 
+									(checkY + enemyImage.height), 
 									spriteQueue[i].x, 
 									(spriteQueue[i].x + spriteQueue[i].image.width), 
 									spriteQueue[i].y, 
@@ -359,34 +369,40 @@ function isCollidingWithObject(checkX, checkY)
 		return false;
 }
 
-function isInsideCanvas(myObj)
-{
+//
+// Check if sprite is inside the canvas
+function isInsideCanvas(myObj) {
 	if(myObj.x >= 0 && myObj.y >= 0 && (myObj.x + myObj.image.width) <= canvas.width && (myObj.y + myObj.image.height) <= canvas.height)
 		return true;
 	else
 		return false;
 }
 
-function isInSafeArea(myObj)
-{
-	if (Math.pow((myObj.x + myObj.image.width / 2) - player.x, 2) + Math.pow((myObj.y + myObj.image.width / 2) - player.y, 2) <= Math.pow(player.safeArea, 2))
+//
+// Check if sprite is inside the players' safe area
+function isInSafeArea(myObj) {
+	if (Math.pow((myObj.x + myObj.image.width / 2) - (player.x + player.image.width / 2), 2) + Math.pow((myObj.y + myObj.image.width / 2) - (player.y + player.image.height / 2), 2) <= Math.pow(player.safeArea, 2))
 		return true;
 }
 
-// Respawn NPC
+//
 // Spawns an NPC within a weighted random of other NPCs
 function respawnNPC() {
 	var s;
-	s = new Sprite(0, 0, spriteImage);
+	s = new Sprite(ENEMY_TYPE, 0, 0, enemyImage);
 
 	//Calculate the average sprite locations
-	var xavg = 0, yavg = 0;
+	var xavg = 0, yavg = 0, enemyCount = 0;
 	for (var i = 0; i < spriteQueue.length; i++) {
+		if (spriteQueue[i].type != ENEMY_TYPE) {
+			continue;
+		}
 		xavg = xavg + spriteQueue[i].x + (spriteQueue[i].image.width / 2);
 		yavg = yavg + spriteQueue[i].y + (spriteQueue[i].image.height / 2);
+		enemyCount++;
 	};
-	xavg = xavg / spriteQueue.length;
-	yavg = yavg / spriteQueue.length;
+	xavg = xavg / enemyCount;
+	yavg = yavg / enemyCount;
 
 	//Choose a random location within the enemyRadius circle of the average, then check to make sure its inside the canvas
 	do
@@ -399,16 +415,15 @@ function respawnNPC() {
 		//Now that we've come up with a random location in a circle, add the average locations
 		s.x += xavg;
 		s.y += yavg;
-	}while (!isInsideCanvas(s) && !isCollidingWithObject(s.x, s.y) && !isInSafeArea(s));
+	} while (!isInsideCanvas(s) && !isCollidingWithObject(s.x, s.y) && !isInSafeArea(s));
 
 	//Make the sprite and push it to the spriteQueue
 	spriteQueue.push(s);
 }
 
-// Check Line of Sight
-// See if we have a straight shot from one point to another, used for enemy burrowing and projectile decisions.
-function hasLoS(x1, x2, y1, y2)
-{
+//
+// Check Line of Sight. If we have a straight shot from one point to another, used for enemy burrowing and projectile decisions.
+function hasLoS(x1, x2, y1, y2) {
 	var i, xc, yc, objTheta, isClear = true;
 	//First, calculate pythagorean distance between the two points
 	var dist = Math.round(Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)));
@@ -435,7 +450,8 @@ function hasLoS(x1, x2, y1, y2)
 
 //
 // Sprite Basic Object
-function Sprite (x, y, image) {
+function Sprite (type, x, y, image) {
+	this.type = type;
 	this.x = x;
 	this.y = y;
 	this.speed = 0.50;
@@ -450,13 +466,4 @@ function Laser(x, y, theta) {
 	this.theta = theta;
 	this.size = 15;
 	this.speed = 20;
-}
-
-// Basic Enemy Projectile
-function EnemyProjectile(x, y, theta)
-{
-	this.x = x;
-	this.y = y;
-	this.theta = theta;
-	this.speed = 1.5;
 }
