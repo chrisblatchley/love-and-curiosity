@@ -299,6 +299,14 @@ function updateGame() {
 				s.x = s.x - Math.sin(Math.atan2((s.x + s.image.width / 2) - (player.x - player.image.width / 2), (player.y - player.image.height/2) - (s.y + s.image.height / 2))) * s.speed;
 				s.y = s.y + Math.cos(Math.atan2((player.x - player.image.width/2) - (s.x + s.image.width / 2), (player.y - player.image.height/2) - (s.y + s.image.height / 2))) * s.speed;
 
+				//Did either we or the enemy kamikaze?
+				if (isInSafeArea(s, 30))
+		   		{
+		   			createExplosion(s.x, s.y);
+		   			spriteQueue.remove(i);
+		   			changeHealth(-20);
+		   		}
+
 				var attackChance = Math.random() * 1000;
 				if (attackChance > 996)
 				{
@@ -340,13 +348,7 @@ function updateGame() {
 		   		{
 		   			createExplosion(s.x, s.y);
 		   			spriteQueue.remove(i);
-		   			player.hp -= 10;
-		   			$("#health").width(player.hp + "%");
-		   			//Player is dead
-		   			if(player.hp <= 0)
-		   			{
-		   				killPlayer();
-		   			}
+		   			changeHealth(-10);
 		   		}
 		   			
 			}
@@ -356,6 +358,19 @@ function updateGame() {
 		if(level.isComplete()) {
 			buildNextLevel();
 		}
+}
+
+
+//Deal with HP changes
+function changeHealth(health)
+{
+	player.hp += health;
+	$("#health").width(player.hp + "%");
+	//Player is dead
+	if(player.hp <= 0)
+	{
+		killPlayer();
+	}
 }
 
 //
