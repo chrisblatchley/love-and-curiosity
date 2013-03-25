@@ -74,7 +74,7 @@ $(function () {
 	// setup event listeners
 	$(document).keydown(function (e) {
 		eventQueue.push(e);
-		if(e.which == 32 || e.which == 38 || e.which == 40)
+		if(e.which == 32 || e.which == 38 || e.which == 40 || e.which == 37 || e.which == 39)
 			e.preventDefault();
 	});
 	$(document).keyup(function (e) { eventQueue.push(e) });
