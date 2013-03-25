@@ -46,8 +46,21 @@ h1, h2 {
 	border: solid 1px white;
 }
 
-#message {
-	height: 2em;
+#hp-bar {
+	background: red;
+	width: 100%;
+	position: absolute;
+	bottom: 6px;
+	left: 1px;
+	height: 25px;
 	text-align: center;
-	background: rgba(255,255,255,0.5);
+	font-family: sans-serif;
+}
+
+#health {
+	position: absolute;
+	bottom: 0px;
+	width: 100%;
+	background: green;
+	height: 25px;
 }

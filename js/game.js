@@ -49,7 +49,20 @@ var NO_ENEMIES = -1;
 var NO_PICKUPS = -1;
 var NO_LOCATION = {x:-100, y:-1000, size: 0};
 
-var LEVEL_ONE_MESSAGE = "<h2>Welcome To Mars!</h2><p>You are Curiosity. You are here researching for earth Scientists.</p><p>You can move around using the arrow keys, and you can fire your laser with the shift keys</p>"
+var LEVEL_ONE_MESSAGE = "<h2>Welcome To Mars!</h2>\
+<p>You are Curiosity. You are here researching for earth Scientists. Your current mission is collecting specimens for study. See if you can find some.</p>\
+<p>You can move around using the arrow keys, and you can fire your laser with the shift keys</p>"
+var LEVEL_TWO_MESSAGE = "<h2>Great Job!</h2>\
+<p>Since you have done so well continue to research these specimens.</p>"
+var LEVEL_THREE_MESSAGE = "<h2>DANGER, DANGER</h2>\
+<p>You have discovered LIFE on mars!! You are a hero! Unfortunately for you, you are now in grave danger</p>\
+<p>RECEIVING A MESSAGE FROM NASA: Destroy hostile life forms. They pose a threat to you, don't let them destroy you!</p>"
+var LEVEL_FOUR_MESSAGE = "<h2>Mars is Overrun!<h2>\
+<p>It seems that these robotic creatures are coming from the center of Mars.</p>\
+<p>Be careful to destroy them, but you must also continue your research!!</p>"
+var LEVEL_FIVE_MESSAGE = "<h2>A Great Last Stand</h2>\
+<p>You have AWOKEN THE SWARM!</p>\
+<p>Mission Objective: Don't die. You are valuable to NASA. Directive: Retain Research</p>"
 
 
 //*****************************************************************************
@@ -133,13 +146,15 @@ function initGame() {
 	player.rotateSpeed = 0.06;
 	player.shotCounter = 0;
 	player.safeArea = 300;
+	player.hp = 100;
 
 	// Create Levels
 	levels = [
 		new Level( 2, 0, 2, NO_ENEMIES, NO_LOCATION, LEVEL_ONE_MESSAGE),
-		// new Level( 5, 0, 5, NO_ENEMIES, NO_LOCATION),
-		//new Level( 2, 1, 2, 1, NO_LOCATION),
-		new Level( 5, 3, 5, 3, NO_LOCATION)
+		new Level( 5, 0, 5, NO_ENEMIES, NO_LOCATION, LEVEL_TWO_MESSAGE),
+		new Level( 2, 1, 2, 1, NO_LOCATION, LEVEL_THREE_MESSAGE),
+		new Level( 5, 10, 5, 10, NO_LOCATION, LEVEL_FOUR_MESSAGE),
+		new Level( 3, 20, 3, 20, NO_LOCATION, LEVEL_FIVE_MESSAGE)
 	];
 
 	// Start First Level
@@ -279,11 +294,11 @@ function updateGame() {
 			// Update Enemy Sprites
 			if( s.type == ENEMY_TYPE) {
 				//Move NPCs towards the player
-				s.x = s.x - Math.sin(Math.atan2((s.x + s.image.width / 2) - player.x, player.y - (s.y + s.image.height / 2))) * s.speed;
-				s.y = s.y + Math.cos(Math.atan2(player.x - (s.x + s.image.width / 2), player.y - (s.y + s.image.height / 2))) * s.speed;
+				s.x = s.x - Math.sin(Math.atan2((s.x + s.image.width / 2) - (player.x - player.image.width / 2), (player.y - player.image.height/2) - (s.y + s.image.height / 2))) * s.speed;
+				s.y = s.y + Math.cos(Math.atan2((player.x - player.image.width/2) - (s.x + s.image.width / 2), (player.y - player.image.height/2) - (s.y + s.image.height / 2))) * s.speed;
 
 				var attackChance = Math.random() * 1000;
-				if (attackChance > 998)
+				if (attackChance > 996)
 				{
 					var a = new Sprite(PROJECTILE_TYPE, s.x, s.y, enemyProjectile);
 					a.theta = Math.atan2(player.x - (s.x + s.image.width / 2), player.y - (s.y + s.image.height / 2));
@@ -315,10 +330,23 @@ function updateGame() {
 		   		var dy = Math.cos(s.theta) * s.speed;
 		   		s.x += dx;
 		   		s.y += dy;
+		   		//Outside canvas
 		   		if (!isInsideCanvas(s))
 		   			spriteQueue.remove(i);
+		   		//We got hit by the projectile
 		   		if (isInSafeArea(s, 30))
+		   		{
+		   			createExplosion(s.x, s.y);
 		   			spriteQueue.remove(i);
+		   			player.hp -= 10;
+		   			$("#health").width(player.hp + "%");
+		   			//Player is dead
+		   			if(player.hp <= 0)
+		   			{
+		   				killPlayer();
+		   			}
+		   		}
+		   			
 			}
 		};
 		$("#message").html("Pickups Needed: " + level.pickupsNeeded + " Enemies Needed: " + level.enemiesNeeded);
@@ -392,6 +420,10 @@ function movePlayer(direction) {
 			var dy = Math.cos(player.theta) * player.forwardSpeed;
 			player.x += dx;
 			player.y -= dy;
+			if( !isInsideCanvas({x: player.x - player.image.width, y: player.y - player.image.height, image: player.image}) ) {
+				player.x -= dx;
+				player.y += dy;
+			}
 			break;
 		case Direction.Right:
 			player.theta += player.rotateSpeed;
@@ -401,6 +433,10 @@ function movePlayer(direction) {
 			var dy = Math.cos(player.theta) * player.forwardSpeed;
 			player.x -= dx;
 			player.y += dy;
+			if( !isInsideCanvas({x: player.x - player.image.width, y: player.y - player.image.height, image: player.image}) ) {
+				player.x += dx;
+				player.y -= dy;
+			}
 			break;
 	}
 }
@@ -422,8 +458,8 @@ function spawnNPC() {
 	s.hp = 2;
 	do
 	{
-		s.x = Math.random() * 10000 % canvas.width;
-		s.y = Math.random() * 10000 % canvas.height;
+		s.x = Math.random() * 10000 % (canvas.width - 25 * 2) + 25;
+		s.y = Math.random() * 10000 % (canvas.height - 25 * 2) + 25;
 	}while (!isInsideCanvas(s) || isCollidingWithObject(s.x, s.y, enemyImage.width, enemyImage.height) || isInSafeArea(s, player.safeArea))
 	
 	spriteQueue.push(s);
@@ -436,8 +472,8 @@ function spawnTerrain() {
 	s.hp = 3;
 	do
 	{
-		s.x = Math.random() * 10000 % canvas.width;
-		s.y = Math.random() * 10000 % canvas.height;
+		s.x = Math.random() * 10000 % (canvas.width - 32 * 2) + 32;
+		s.y = Math.random() * 10000 % (canvas.height - 64 * 2) + 64;
 	}while (!isInsideCanvas(s) || isCollidingWithObject(s.x, s.y, brownRock.width, brownRock.height) || isInSafeArea(s, player.safeArea));
 	
 	spriteQueue.push(s);
@@ -513,6 +549,7 @@ function isInSafeArea(myObj, radius) {
 function respawnNPC() {
 	var s;
 	s = new Sprite(ENEMY_TYPE, 0, 0, enemyImage);
+	s.hp = 2;
 
 	//Calculate the average sprite locations
 	var xavg = 0, yavg = 0, enemyCount = 0;
@@ -566,6 +603,26 @@ function hasLoS(x1, x2, y1, y2) {
 		}
 	};
 	return isClear;
+}
+
+//
+// YOU LOST THE GAME!! YOU SUCK AT LIFE!
+function killPlayer() {
+	spriteQueue = []
+	createExplosion(player.x - player.image.width/2, player.y - player.image.height/2);
+	createExplosion(player.x, player.y);
+	createExplosion(player.x - player.image.width, player.y - player.image.y);
+	createExplosion(player.x - 20, player.y - 30);
+
+	// Hacky way to not draw player
+	player.x = -1000;
+	player.y = -1000;
+	
+	$("#overlay").html("")
+				 .animate({opacity: 0.8, height: 758}, function() {$("#overlay").html("<h1>Sorry! You Lost...<h1><h1>Click to play again!</h1>")})
+				 .click(function() {
+				 	$("#overlay").animate({height: 100, opacity: 0}, function() { initGame(); }).html("");
+				 });
 }
 
 //
