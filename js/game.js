@@ -14,7 +14,7 @@
 // Create Document Variables
 var canvas;
 var ctx;
-
+var gameIterationId = 0;
 
 //
 // Create Global Game Variables
@@ -48,6 +48,8 @@ var NO_ENEMIES = -1;
 var NO_PICKUPS = -1;
 var NO_LOCATION = {x:-100, y:-1000, size: 0};
 
+var LEVEL_ONE_MESSAGE = "<h2>Welcome To Mars!</h2><p>You are Curiosity. You are here researching for earth Scientists.</p><p>You can move around using the arrow keys, and you can fire your laser with the shift keys</p>"
+
 
 //*****************************************************************************
 //*****************************************************************************
@@ -55,9 +57,16 @@ var NO_LOCATION = {x:-100, y:-1000, size: 0};
 //
 // MAIN START POINT: on document.load
 $(function () {
+	// setup event listeners
+	$(document).keydown(function (e) {
+		eventQueue.push(e);
+		if(e.which == 32 || e.which == 38 || e.which == 40)
+			e.preventDefault();
+	});
+	$(document).keyup(function (e) { eventQueue.push(e) });
+	
+	// Initialized the game
 	initGame();
-
-	$("#message").html("Loaded up!");
 });
 
 //
@@ -91,7 +100,7 @@ Array.prototype.removeObject = function(object) {
 function displayMessage(message, time) {
 	var overlay = $("#overlay");
 	overlay.html(message);
-	overlay.fadeIn(2000).delay(time).fadeOut(2000);
+	overlay.animate({opacity:0.8}).delay(time).animate({opacity: 0.0});
 }
 
 //
@@ -109,8 +118,10 @@ function initGame() {
 	canvas.width = $("#game").width();
 	canvas.height = $("#game").height();
 
-	// Display Welcome Message
-	displayMessage("Welcome to Mars. You are the Curiosity Rover. Use the Arrow Keys to move, and Shift to fire your laser!", 5000);
+	// Clear the queues
+	laserQueue = [];
+	spriteQueue = [];
+	clearInterval(gameIterationId);
 
 	// Setup player sprite
 	player = new Sprite(PLAYER_TYPE, canvas.width / 2 - playerImage.width / 2, canvas.height / 2 - playerImage.height / 2, playerImage);
@@ -122,23 +133,16 @@ function initGame() {
 
 	// Create Levels
 	levels = [
-		new Level( 2, 0, 2, NO_ENEMIES),
-		new Level( 5, 0, 5, NO_ENEMIES),
-		new Level( 2, 1, NO_PICKUPS, 1),
-		new Level( 5, 3, 5, 3)
+		new Level( 2, 0, 2, NO_ENEMIES, NO_LOCATION, LEVEL_ONE_MESSAGE),
+		// new Level( 5, 0, 5, NO_ENEMIES, NO_LOCATION),
+		// new Level( 2, 1, 2, 1, NO_LOCATION),
+		// new Level( 5, 3, 5, 3, NO_LOCATION)
 	];
 
 	// Start First Level
 	buildNextLevel(level);
 
-	$(document).keydown(function (e) {
-		eventQueue.push(e);
-		if(e.which == 32 || e.which == 37 || e.which == 40)
-			e.preventDefault();
-	});
-	$(document).keyup(function (e) { eventQueue.push(e) });
-
-	setInterval(gameLoop, 15);
+	gameIterationId = setInterval(gameLoop, 15);
 }
 
 //
@@ -294,12 +298,10 @@ function updateGame() {
 				}
 			}
 		};
-		$("#message").html("Pickups Needed: " + level.pickupsNeeded + " Enemies Needed: " + levels.enemiesNeeded);
+		$("#message").html("Pickups Needed: " + level.pickupsNeeded + " Enemies Needed: " + level.enemiesNeeded);
 
 		if(level.isComplete()) {
-			displayMessage("Level 2: Do some more research");
-			spriteQueue = [];
-			buildLevel();
+			buildNextLevel();
 		}
 }
 
@@ -514,7 +516,7 @@ function respawnNPC() {
 		//Now that we've come up with a random location in a circle, add the average locations
 		s.x += xavg;
 		s.y += yavg;
-	} while (!isInsideCanvas(s) || isCollidingWithObject(s.x, s.y, enemyImage.width, enemyImage.height) || isInSafeArea(s) );
+	} while (spriteQueue.length > 0 && !isInsideCanvas(s) || isCollidingWithObject(s.x, s.y, enemyImage.width, enemyImage.height) || isInSafeArea(s) );
 
 	//Make the sprite and push it to the spriteQueue
 	spriteQueue.push(s);
@@ -542,6 +544,16 @@ function hasLoS(x1, x2, y1, y2) {
 		}
 	};
 	return isClear;
+}
+
+//
+// YOU WON THE GAME!!! HERE'S A Nice animation for you!
+function runCompletionAnimation() {
+	$("#overlay").html("")
+				 .animate({opacity: 0.8, height: 758}, function() {$("#overlay").html("<h1>Congratulations! You won!<h1><h1>Click to play again!</h1>")})
+				 .click(function() {
+				 	$("#overlay").animate({height: 100, opacity: 0}, function() { initGame(); }).html("");
+				 });
 }
 
 //*****************************************************************************
@@ -584,20 +596,21 @@ function Laser(x, y, theta) {
 
 //
 // Level object
-function Level(landCount, enemyCount, pickupsNeeded, enemiesNeeded, location) {
+function Level(landCount, enemyCount, pickupsNeeded, enemiesNeeded, location, message) {
 	this.landCount = landCount;
 	this.enemyCount = enemyCount;
 	this.location = location;
 	this.pickupsNeeded = pickupsNeeded;
 	this.enemiesNeeded = enemiesNeeded;
-	if(typeof location == "undefined") {
+	this.message = message;
+	if(location == NO_LOCATION) {
 		this.hasLocationObjective = false;
 	} else {
 		this.hasLocationObjective = true;
 	}
 	this.isComplete = function () {
-		if (pickupsNeeded > 0) return false;
-		if (enemiesNeeded > 0) return false;
+		if (this.pickupsNeeded > 0) return false;
+		if (this.enemiesNeeded > 0) return false;
 		if (!locationOverlap(	player.x - player.image.width, player.x,
 								player.y - player.image.y, player.y,
 								this.location.x, this.location.x + this.location.size,
@@ -611,11 +624,20 @@ function Level(landCount, enemyCount, pickupsNeeded, enemiesNeeded, location) {
 //
 // Build a level
 function buildNextLevel() {
-	level = levels.shift();
-	for(var i = 0; i < level.landCount; i++) {
-		spawnTerrain();
-	}
-	for(var i = 0; i < level.enemyCount; i++) {
-		respawnNPC();
+	if(levels.length > 0) {
+		level = levels.shift();
+		for(var i = 0; i < level.landCount; i++) {
+			spawnTerrain();
+		}
+		for(var i = 0; i < level.enemyCount; i++) {
+			if(i == 0)
+				spawnNPC();
+			else
+				respawnNPC();
+		}
+		displayMessage(level.message, 5000);
+	} else {
+		clearInterval(gameIterationId);
+		runCompletionAnimation();
 	}
 }
