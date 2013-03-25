@@ -27,12 +27,13 @@ var levels = [];
 var level;
 
 // Load Media
-var playerImage = loadImage("media/car.png");
-var enemyImage = loadImage("media/sprite.png");
+var playerImage = loadImage("media/curiosity.png");
+var enemyImage = loadImage("media/enemy.png");
 var tileBack = loadImage("media/rocktile.png");
 var brownRock = loadImage("media/brownrock.png");
 var explodeImage = loadImage("media/explode.png");
 var diamondImage = loadImage("media/diamond.png");
+var enemyProjectile = loadImage("media/enemyprojectile.png");
 
 //
 // Game Constants
@@ -67,6 +68,8 @@ $(function () {
 	
 	// Initialized the game
 	initGame();
+
+	$("#message").html("Loaded up!");
 });
 
 //
@@ -135,8 +138,8 @@ function initGame() {
 	levels = [
 		new Level( 2, 0, 2, NO_ENEMIES, NO_LOCATION, LEVEL_ONE_MESSAGE),
 		// new Level( 5, 0, 5, NO_ENEMIES, NO_LOCATION),
-		// new Level( 2, 1, 2, 1, NO_LOCATION),
-		// new Level( 5, 3, 5, 3, NO_LOCATION)
+		//new Level( 2, 1, 2, 1, NO_LOCATION),
+		new Level( 5, 3, 5, 3, NO_LOCATION)
 	];
 
 	// Start First Level
@@ -201,6 +204,7 @@ function updateGame() {
 			   				{
 		 						//Delete laser, remove sprite, create explosion and respawn
 			   					laserQueue.remove(i);
+			   					//Kill enemy
 			   					createExplosion(l.x, l.y);
 
 		   						spriteQueue[j].hp --;
@@ -277,6 +281,15 @@ function updateGame() {
 				//Move NPCs towards the player
 				s.x = s.x - Math.sin(Math.atan2((s.x + s.image.width / 2) - player.x, player.y - (s.y + s.image.height / 2))) * s.speed;
 				s.y = s.y + Math.cos(Math.atan2(player.x - (s.x + s.image.width / 2), player.y - (s.y + s.image.height / 2))) * s.speed;
+
+				var attackChance = Math.random() * 1000;
+				if (attackChance > 998)
+				{
+					var a = new Sprite(PROJECTILE_TYPE, s.x, s.y, enemyProjectile);
+					a.theta = Math.atan2(player.x - (s.x + s.image.width / 2), player.y - (s.y + s.image.height / 2));
+					a.speed = 1.25;
+					spriteQueue.push(a);
+				}
 			}
 			else if( s.type == EXPLOSION_TYPE) {
 				s.phaseCounter--;
@@ -296,6 +309,16 @@ function updateGame() {
 					spriteQueue.remove(i);
 					level.pickupsNeeded--;
 				}
+			}
+			else if( s.type == PROJECTILE_TYPE) {
+				var dx = Math.sin(s.theta) * s.speed;
+		   		var dy = Math.cos(s.theta) * s.speed;
+		   		s.x += dx;
+		   		s.y += dy;
+		   		if (!isInsideCanvas(s))
+		   			spriteQueue.remove(i);
+		   		if (isInSafeArea(s, 30))
+		   			spriteQueue.remove(i);
 			}
 		};
 		$("#message").html("Pickups Needed: " + level.pickupsNeeded + " Enemies Needed: " + level.enemiesNeeded);
@@ -401,7 +424,7 @@ function spawnNPC() {
 	{
 		s.x = Math.random() * 10000 % canvas.width;
 		s.y = Math.random() * 10000 % canvas.height;
-	}while (!isInsideCanvas(s) || isCollidingWithObject(s.x, s.y, enemyImage.width, enemyImage.height) || isInSafeArea(s));
+	}while (!isInsideCanvas(s) || isCollidingWithObject(s.x, s.y, enemyImage.width, enemyImage.height) || isInSafeArea(s, player.safeArea))
 	
 	spriteQueue.push(s);
 }
@@ -415,7 +438,7 @@ function spawnTerrain() {
 	{
 		s.x = Math.random() * 10000 % canvas.width;
 		s.y = Math.random() * 10000 % canvas.height;
-	}while (!isInsideCanvas(s) || isCollidingWithObject(s.x, s.y, brownRock.width, brownRock.height) || isInSafeArea(s));
+	}while (!isInsideCanvas(s) || isCollidingWithObject(s.x, s.y, brownRock.width, brownRock.height) || isInSafeArea(s, player.safeArea));
 	
 	spriteQueue.push(s);
 }
@@ -480,8 +503,8 @@ function isInsideCanvas(myObj) {
 
 //
 // Check if sprite is inside the players' safe area
-function isInSafeArea(myObj) {
-	if (Math.pow((myObj.x + myObj.image.width / 2) - (player.x + player.image.width / 2), 2) + Math.pow((myObj.y + myObj.image.width / 2) - (player.y + player.image.height / 2), 2) <= Math.pow(player.safeArea, 2))
+function isInSafeArea(myObj, radius) {
+	if (Math.pow((myObj.x + myObj.image.width / 2) - (player.x - player.image.width / 2), 2) + Math.pow((myObj.y + myObj.image.width / 2) - (player.y - player.image.height / 2), 2) <= Math.pow(radius, 2))
 		return true;
 }
 
@@ -490,7 +513,6 @@ function isInSafeArea(myObj) {
 function respawnNPC() {
 	var s;
 	s = new Sprite(ENEMY_TYPE, 0, 0, enemyImage);
-	s.hp = 2;
 
 	//Calculate the average sprite locations
 	var xavg = 0, yavg = 0, enemyCount = 0;
@@ -516,7 +538,7 @@ function respawnNPC() {
 		//Now that we've come up with a random location in a circle, add the average locations
 		s.x += xavg;
 		s.y += yavg;
-	} while (spriteQueue.length > 0 && !isInsideCanvas(s) || isCollidingWithObject(s.x, s.y, enemyImage.width, enemyImage.height) || isInSafeArea(s) );
+	} while (spriteQueue.length > 0 && !isInsideCanvas(s) || isCollidingWithObject(s.x, s.y, enemyImage.width, enemyImage.height) || isInSafeArea(s, player.safeArea) );
 
 	//Make the sprite and push it to the spriteQueue
 	spriteQueue.push(s);
