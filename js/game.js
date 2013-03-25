@@ -308,13 +308,16 @@ function updateGame() {
 		   			changeHealth(-20);
 		   		}
 
-				var attackChance = Math.random() * 1000;
-				if (attackChance > 996)
-				{
-					var a = new Sprite(PROJECTILE_TYPE, s.x, s.y, enemyProjectile);
-					a.theta = Math.atan2(player.x - (s.x + s.image.width / 2), player.y - (s.y + s.image.height / 2));
-					a.speed = 2.5;
-					spriteQueue.push(a);
+		   		if(hasLoS(s.x + s.image.width / 2, player.x - player.image.width / 2, s.y + s.image.height / 2, player.y - player.image.height / 2))
+		   		{
+					var attackChance = Math.random() * 1000;
+					if (attackChance > 996)
+					{
+						var a = new Sprite(PROJECTILE_TYPE, s.x + (enemyProjectile.width/2), s.y + (enemyProjectile.height/2), enemyProjectile);
+						a.theta = Math.atan2((player.x - player.image.width/2) - (s.x + s.image.width / 2), (player.y - player.image.height/2) - (s.y + s.image.height / 2));
+						a.speed = 2.5;
+						spriteQueue.push(a);
+					}
 				}
 			}
 			else if( s.type == EXPLOSION_TYPE) {
@@ -350,6 +353,12 @@ function updateGame() {
 		   			createExplosion(s.x, s.y);
 		   			spriteQueue.remove(i);
 		   			changeHealth(-10);
+		   		}
+		   		//Blow up if we hit a terrain object
+		   		if(isCollidingWithObject(LANDSCAPE_TYPE, s.x, s.y, s.image.width, s.image.height))
+		   		{
+		   			createExplosion(s.x, s.y);
+		   			spriteQueue.remove(i);
 		   		}
 		   			
 			}
@@ -614,7 +623,7 @@ function hasLoS(x1, x2, y1, y2) {
 	{
 		xc = x1 - Math.cos(objTheta) * i;
 		yc = y1 - Math.sin(objTheta) * i;
-		if(!isCollidingWithObject(ALL_TYPE, xc, yc, 0, 0) && isClear) {
+		if(!isCollidingWithObject(LANDSCAPE_TYPE, xc, yc, 0, 0) && isClear) {
 			isClear = true;
 		} else {
 			isClear = false;
