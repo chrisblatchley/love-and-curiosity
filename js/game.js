@@ -57,7 +57,7 @@ var LEVEL_TWO_MESSAGE = "<h2>Great Job!</h2>\
 var LEVEL_THREE_MESSAGE = "<h2>DANGER, DANGER</h2>\
 <p>You have discovered LIFE on mars!! You are a hero! Unfortunately for you, you are now in grave danger</p>\
 <p>RECEIVING A MESSAGE FROM NASA: Destroy hostile life forms. They pose a threat to you, don't let them destroy you!</p>"
-var LEVEL_FOUR_MESSAGE = "<h2>Mars is Overrun!<h2>\
+var LEVEL_FOUR_MESSAGE = "<h2>Mars is Overrun!</h2>\
 <p>It seems that these robotic creatures are coming from the center of Mars.</p>\
 <p>Be careful to destroy them, but you must also continue your research!!</p>"
 var LEVEL_FIVE_MESSAGE = "<h2>A Great Last Stand</h2>\
@@ -147,6 +147,7 @@ function initGame() {
 	player.shotCounter = 0;
 	player.safeArea = 300;
 	player.hp = 100;
+	$("#health").width(player.hp + "%");
 
 	// Create Levels
 	levels = [
@@ -302,7 +303,7 @@ function updateGame() {
 				{
 					var a = new Sprite(PROJECTILE_TYPE, s.x, s.y, enemyProjectile);
 					a.theta = Math.atan2(player.x - (s.x + s.image.width / 2), player.y - (s.y + s.image.height / 2));
-					a.speed = 1.25;
+					a.speed = 2.5;
 					spriteQueue.push(a);
 				}
 			}
