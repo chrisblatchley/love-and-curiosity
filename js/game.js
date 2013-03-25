@@ -45,24 +45,25 @@ var PROJECTILE_TYPE = "projectile";
 var LANDSCAPE_TYPE = "landscape";
 var EXPLOSION_TYPE = "explosion";
 var PICKUP_TYPE = "pickup";
+var ALL_TYPE = "all";
 var NO_ENEMIES = -1;
 var NO_PICKUPS = -1;
 var NO_LOCATION = {x:-100, y:-1000, size: 0};
 
 var LEVEL_ONE_MESSAGE = "<h2>Welcome To Mars!</h2>\
 <p>You are Curiosity. You are here researching for earth Scientists. Your current mission is collecting specimens for study. See if you can find some.</p>\
-<p>You can move around using the arrow keys, and you can fire your laser with the shift keys</p>"
+<p>You can move around using the arrow keys, and you can fire your laser with the shift keys</p>";
 var LEVEL_TWO_MESSAGE = "<h2>Great Job!</h2>\
-<p>Since you have done so well continue to research these specimens.</p>"
+<p>Since you have done so well continue to research these specimens.</p>";
 var LEVEL_THREE_MESSAGE = "<h2>DANGER, DANGER</h2>\
 <p>You have discovered LIFE on mars!! You are a hero! Unfortunately for you, you are now in grave danger</p>\
-<p>RECEIVING A MESSAGE FROM NASA: Destroy hostile life forms. They pose a threat to you, don't let them destroy you!</p>"
+<p>RECEIVING A MESSAGE FROM NASA: Destroy hostile life forms. They pose a threat to you, don't let them destroy you!</p>";
 var LEVEL_FOUR_MESSAGE = "<h2>Mars is Overrun!</h2>\
 <p>It seems that these robotic creatures are coming from the center of Mars.</p>\
-<p>Be careful to destroy them, but you must also continue your research!!</p>"
+<p>Be careful to destroy them, but you must also continue your research!!</p>";
 var LEVEL_FIVE_MESSAGE = "<h2>A Great Last Stand</h2>\
 <p>You have AWOKEN THE SWARM!</p>\
-<p>Mission Objective: Don't die. You are valuable to NASA. Directive: Retain Research</p>"
+<p>Mission Objective: Don't die. You are valuable to NASA. Directive: Retain Research</p>";
 
 
 //*****************************************************************************
@@ -421,7 +422,7 @@ function movePlayer(direction) {
 			var dy = Math.cos(player.theta) * player.forwardSpeed;
 			player.x += dx;
 			player.y -= dy;
-			if( !isInsideCanvas({x: player.x - player.image.width, y: player.y - player.image.height, image: player.image}) ) {
+			if( isCollidingWithObject(LANDSCAPE_TYPE, player.x - player.image.width, player.y - player.image.height, player.image.width, player.image.height) || !isInsideCanvas({x: player.x - player.image.width, y: player.y - player.image.height, image: player.image}) ) {
 				player.x -= dx;
 				player.y += dy;
 			}
@@ -434,7 +435,7 @@ function movePlayer(direction) {
 			var dy = Math.cos(player.theta) * player.forwardSpeed;
 			player.x -= dx;
 			player.y += dy;
-			if( !isInsideCanvas({x: player.x - player.image.width, y: player.y - player.image.height, image: player.image}) ) {
+			if( isCollidingWithObject(LANDSCAPE_TYPE, player.x - player.image.width, player.y - player.image.height, player.image.width, player.image.height) | !isInsideCanvas({x: player.x - player.image.width, y: player.y - player.image.height, image: player.image}) ) {
 				player.x += dx;
 				player.y -= dy;
 			}
@@ -461,7 +462,7 @@ function spawnNPC() {
 	{
 		s.x = Math.random() * 10000 % (canvas.width - 25 * 2) + 25;
 		s.y = Math.random() * 10000 % (canvas.height - 25 * 2) + 25;
-	}while (!isInsideCanvas(s) || isCollidingWithObject(s.x, s.y, enemyImage.width, enemyImage.height) || isInSafeArea(s, player.safeArea))
+	}while (!isInsideCanvas(s) || isCollidingWithObject(ALL_TYPE, s.x, s.y, enemyImage.width, enemyImage.height) || isInSafeArea(s, player.safeArea))
 	
 	spriteQueue.push(s);
 }
@@ -475,7 +476,7 @@ function spawnTerrain() {
 	{
 		s.x = Math.random() * 10000 % (canvas.width - 32 * 2) + 32;
 		s.y = Math.random() * 10000 % (canvas.height - 64 * 2) + 64;
-	}while (!isInsideCanvas(s) || isCollidingWithObject(s.x, s.y, brownRock.width, brownRock.height) || isInSafeArea(s, player.safeArea));
+	}while (!isInsideCanvas(s) || isCollidingWithObject(ALL_TYPE, s.x, s.y, brownRock.width, brownRock.height) || isInSafeArea(s, player.safeArea));
 	
 	spriteQueue.push(s);
 }
@@ -504,26 +505,26 @@ function locationOverlap(aLeft, aRight, aTop, aBottom, bLeft, bRight, bTop, bBot
 	return true;
 }
 
-// Check Spawn Area
-// Ensures a sprite spawns within a legal area and not on top of another sprite
-// Returns false if no collisions are detected
-// Returns true if a collision is detected
-function isCollidingWithObject(checkX, checkY, checkWidth, checkHeight) {
-		//Do we include the player in the calculation?
-		//Are we spawning too close to the player?
-
-		//Check the existing sprites to ensure no overlap
-		for (var i = 0; i < spriteQueue.length; i++) 
+// Check collision with specific type of object
+// Returns true if colliding with an object, false if not
+function isCollidingWithObject(objType, checkX, checkY, checkWidth, checkHeight)
+{
+	for (var i = 0; i < spriteQueue.length; i++) 
 		{
-			if (locationOverlap(	checkX,
-									(checkX + checkWidth), 
-									checkY, 
-									(checkY + checkHeight), 
-									spriteQueue[i].x, 
-									(spriteQueue[i].x + spriteQueue[i].image.width), 
-									spriteQueue[i].y, 
-									(spriteQueue[i].y + spriteQueue[i].image.height))) {
-				return true;
+			//Check one specific type of sprite, or all of them
+			if(objType == ALL_TYPE || objType == spriteQueue[i].type)
+			{
+				if (locationOverlap(	checkX,
+										(checkX + checkWidth), 
+										checkY, 
+										(checkY + checkHeight), 
+										spriteQueue[i].x, 
+										(spriteQueue[i].x + spriteQueue[i].image.width), 
+										spriteQueue[i].y, 
+										(spriteQueue[i].y + spriteQueue[i].image.height))) 
+				{
+					return true;
+				}
 			}
 		};
 		return false;
@@ -576,7 +577,7 @@ function respawnNPC() {
 		//Now that we've come up with a random location in a circle, add the average locations
 		s.x += xavg;
 		s.y += yavg;
-	} while (spriteQueue.length > 0 && !isInsideCanvas(s) || isCollidingWithObject(s.x, s.y, enemyImage.width, enemyImage.height) || isInSafeArea(s, player.safeArea) );
+	} while (spriteQueue.length > 0 && !isInsideCanvas(s) || isCollidingWithObject(ALL_TYPE, s.x, s.y, enemyImage.width, enemyImage.height) || isInSafeArea(s, player.safeArea) );
 
 	//Make the sprite and push it to the spriteQueue
 	spriteQueue.push(s);
@@ -597,7 +598,7 @@ function hasLoS(x1, x2, y1, y2) {
 	{
 		xc = x1 - Math.cos(objTheta) * i;
 		yc = y1 - Math.sin(objTheta) * i;
-		if(!isCollidingWithObject(xc, yc, 0, 0) && isClear) {
+		if(!isCollidingWithObject(ALL_TYPE, xc, yc, 0, 0) && isClear) {
 			isClear = true;
 		} else {
 			isClear = false;
