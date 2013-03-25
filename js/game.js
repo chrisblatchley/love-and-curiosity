@@ -304,6 +304,7 @@ function updateGame() {
 		   		{
 		   			createExplosion(s.x, s.y);
 		   			spriteQueue.remove(i);
+		   			level.enemiesNeeded --;
 		   			changeHealth(-20);
 		   		}
 
