@@ -188,6 +188,27 @@ function gameLoop() {
 	drawScreen();
 }
 
+function hitSprite(j)
+{
+								spriteQueue[j].hp --;
+
+			   					// Remove sprite if health gone
+			   					if(spriteQueue[j].hp <= 0) {
+			   						// If Enemy then respawn
+				   					if(spriteQueue[j].type == ENEMY_TYPE) {
+				   						level.enemiesNeeded --;
+				   						if(level.enemiesNeeded > 0)
+				   							respawnNPC();
+				   					}
+
+			   						// If Terrain then drop pickup
+				   					if(spriteQueue[j].type == LANDSCAPE_TYPE) {
+				   						createPickup(spriteQueue[j].x + spriteQueue[j].image.width/2, spriteQueue[j].y + spriteQueue[j].image.height/2);
+				   					}
+		   							spriteQueue.remove(j);
+		   						}
+}
+
 //
 // Update the automatic game state
 function updateGame() {
@@ -224,23 +245,7 @@ function updateGame() {
 			   					//Kill enemy
 			   					createExplosion(l.x, l.y);
 
-		   						spriteQueue[j].hp --;
-
-			   					// Remove sprite if health gone
-			   					if(spriteQueue[j].hp <= 0) {
-			   						// If Enemy then respawn
-				   					if(spriteQueue[j].type == ENEMY_TYPE) {
-				   						level.enemiesNeeded --;
-				   						if(level.enemiesNeeded > 0)
-				   							respawnNPC();
-				   					}
-
-			   						// If Terrain the drop pickup
-				   					if(spriteQueue[j].type == LANDSCAPE_TYPE) {
-				   						createPickup(spriteQueue[j].x + spriteQueue[j].image.width/2, spriteQueue[j].y + spriteQueue[j].image.height/2);
-				   					}
-		   							spriteQueue.remove(j);
-		   						}
+		   						hitSprite(j);
 
 			   					//Skip checking other enemies
 			   					continue laser_loop;
@@ -357,8 +362,10 @@ function updateGame() {
 		   		//Blow up if we hit a terrain object
 		   		if(isCollidingWithObject(LANDSCAPE_TYPE, s.x, s.y, s.image.width, s.image.height))
 		   		{
-		   			createExplosion(s.x, s.y);
 		   			spriteQueue.remove(i);
+		   			terrainHit = isCollidingWithObject(LANDSCAPE_TYPE, s.x, s.y, s.image.width, s.image.height, true);
+		   			hitSprite(terrainHit);
+		   			createExplosion(s.x, s.y);
 		   		}
 		   			
 			}
@@ -532,7 +539,7 @@ function locationOverlap(aLeft, aRight, aTop, aBottom, bLeft, bRight, bTop, bBot
 
 // Check collision with specific type of object
 // Returns true if colliding with an object, false if not
-function isCollidingWithObject(objType, checkX, checkY, checkWidth, checkHeight)
+function isCollidingWithObject(objType, checkX, checkY, checkWidth, checkHeight, returnSprite)
 {
 	for (var i = 0; i < spriteQueue.length; i++) 
 		{
@@ -548,7 +555,9 @@ function isCollidingWithObject(objType, checkX, checkY, checkWidth, checkHeight)
 										spriteQueue[i].y, 
 										(spriteQueue[i].y + spriteQueue[i].image.height))) 
 				{
-					return true;
+					if (typeof returnSprite == 'undefined')
+    					return true;
+    				return i;
 				}
 			}
 		};
