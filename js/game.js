@@ -20,35 +20,35 @@ var gameIterationId = 0;
 // Create Global Game Variables
 var player;
 var spriteQueue = [];
-var laserQueue = [];
-var eventQueue = []
-var keysDown = new Array(222);	// A Boolean array to show which keys are pressed
-var levels = [];
+var laserQueue  = [];
+var eventQueue  = []
+var keysDown    = new Array(222);	// A Boolean array to show which keys are pressed
+var levels      = [];
 var level;
 
 // Load Media
-var playerImage = loadImage("media/curiosity.png");
-var enemyImage = loadImage("media/enemy.png");
-var tileBack = loadImage("media/rocktile.png");
-var brownRock = loadImage("media/brownrock.png");
-var explodeImage = loadImage("media/explode.png");
-var diamondImage = loadImage("media/diamond.png");
+var playerImage     = loadImage("media/curiosity.png");
+var enemyImage      = loadImage("media/enemy.png");
+var tileBack        = loadImage("media/rocktile.png");
+var brownRock       = loadImage("media/brownrock.png");
+var explodeImage    = loadImage("media/explode.png");
+var diamondImage    = loadImage("media/diamond.png");
 var enemyProjectile = loadImage("media/enemyprojectile.png");
 
 //
 // Game Constants
-var Direction = { Up:0, Down:1, Left:2, Right: 3 };
-var enemyRadius = 300;
-var PLAYER_TYPE = "player";
-var ENEMY_TYPE = "enemy";
+var Direction       = { Up:0, Down:1, Left:2, Right: 3 };
+var enemyRadius     = 300;
+var PLAYER_TYPE     = "player";
+var ENEMY_TYPE      = "enemy";
 var PROJECTILE_TYPE = "projectile";
-var LANDSCAPE_TYPE = "landscape";
-var EXPLOSION_TYPE = "explosion";
-var PICKUP_TYPE = "pickup";
-var ALL_TYPE = "all";
-var NO_ENEMIES = -1;
-var NO_PICKUPS = -1;
-var NO_LOCATION = {x:-100, y:-1000, size: 0};
+var LANDSCAPE_TYPE  = "landscape";
+var EXPLOSION_TYPE  = "explosion";
+var PICKUP_TYPE     = "pickup";
+var ALL_TYPE        = "all";
+var NO_ENEMIES      = -1;
+var NO_PICKUPS      = -1;
+var NO_LOCATION     = {x:-100, y:-1000, size: 0};
 
 var LEVEL_ONE_MESSAGE = "<h2>Welcome To Mars!</h2>\
 <p>You are Curiosity. You are here researching for earth Scientists. Your current mission is collecting specimens for study. See if you can find some.</p>\
@@ -677,47 +677,47 @@ function runCompletionAnimation() {
 //
 // Sprite Basic Object
 function Sprite (type, x, y, image) {
-	this.type = type;
-	this.x = x;
-	this.y = y;
+	this.type  = type;
+	this.x     = x;
+	this.y     = y;
 	this.speed = 0.50;
 	this.image = image;
-	this.hp = 1;
+	this.hp    = 1;
 }
 
 function SpriteMap(type, x, y, image, imagex, imagey, rows, cols) {
-	this.type = type;
-	this.x = x;
-	this.y = y;
-	this.speed = 0.50;
-	this.image = image;
-	this.imagex = imagex;
-	this.imagey = imagey;
-	this.rows = rows;
-	this.cols = cols;
-	this.phase = 0;
+	this.type         = type;
+	this.x            = x;
+	this.y            = y;
+	this.speed        = 0.50;
+	this.image        = image;
+	this.imagex       = imagex;
+	this.imagey       = imagey;
+	this.rows         = rows;
+	this.cols         = cols;
+	this.phase        = 0;
 	this.phaseCounter = rows*cols;
 }
 
 //
 // Basic Laser Object
 function Laser(x, y, theta) {
-	this.x = x;
-	this.y = y;
+	this.x     = x;
+	this.y     = y;
 	this.theta = theta;
-	this.size = 15;
+	this.size  = 15;
 	this.speed = 20;
 }
 
 //
 // Level object
 function Level(landCount, enemyCount, pickupsNeeded, enemiesNeeded, location, message) {
-	this.landCount = landCount;
-	this.enemyCount = enemyCount;
-	this.location = location;
+	this.landCount     = landCount;
+	this.enemyCount    = enemyCount;
+	this.location      = location;
 	this.pickupsNeeded = pickupsNeeded;
 	this.enemiesNeeded = enemiesNeeded;
-	this.message = message;
+	this.message       = message;
 	if(location == NO_LOCATION) {
 		this.hasLocationObjective = false;
 	} else {
