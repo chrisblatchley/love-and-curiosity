@@ -1,7 +1,7 @@
 /*****************************************
  * File: game.js
  * Authors: Chris Blatchley, Thad Bond
- * 
+ *
  * * * * * * * * * * * * * * * * * * * * *
  * Love and Curiosity is a Javascript and
  * Canvas game developed for the SP2013
@@ -79,7 +79,7 @@ $(function () {
 			e.preventDefault();
 	});
 	$(document).keyup(function (e) { eventQueue.push(e) });
-	
+
 	// Initialized the game
 	initGame();
 
@@ -190,23 +190,23 @@ function gameLoop() {
 
 function hitSprite(j)
 {
-								spriteQueue[j].hp --;
+	spriteQueue[j].hp --;
 
-			   					// Remove sprite if health gone
-			   					if(spriteQueue[j].hp <= 0) {
-			   						// If Enemy then respawn
-				   					if(spriteQueue[j].type == ENEMY_TYPE) {
-				   						level.enemiesNeeded --;
-				   						if(level.enemiesNeeded > 0)
-				   							respawnNPC();
-				   					}
+	// Remove sprite if health gone
+	if(spriteQueue[j].hp <= 0) {
+		// If Enemy then respawn
+		if(spriteQueue[j].type == ENEMY_TYPE) {
+			level.enemiesNeeded --;
+			if(level.enemiesNeeded > 0)
+				respawnNPC();
+		}
 
-			   						// If Terrain then drop pickup
-				   					if(spriteQueue[j].type == LANDSCAPE_TYPE) {
-				   						createPickup(spriteQueue[j].x + spriteQueue[j].image.width/2, spriteQueue[j].y + spriteQueue[j].image.height/2);
-				   					}
-		   							spriteQueue.remove(j);
-		   						}
+		// If Terrain then drop pickup
+		if(spriteQueue[j].type == LANDSCAPE_TYPE) {
+			createPickup(spriteQueue[j].x + spriteQueue[j].image.width/2, spriteQueue[j].y + spriteQueue[j].image.height/2);
+		}
+		spriteQueue.remove(j);
+	}
 }
 
 //
@@ -293,9 +293,9 @@ function updateGame() {
 		laserQueue = newQueue;
 		if(player.shotCounter > 0) player.shotCounter--;	// Decrease shot counter
 
-	
+
 	// Update All Sprites
-		for (var i = 0; i < spriteQueue.length; i++) 
+		for (var i = 0; i < spriteQueue.length; i++)
 		{
 			var s = spriteQueue[i];
 			// Update Enemy Sprites
@@ -367,7 +367,7 @@ function updateGame() {
 		   			hitSprite(terrainHit);
 		   			createExplosion(s.x, s.y);
 		   		}
-		   			
+
 			}
 		};
 		$("#message").html("Pickups Needed: " + level.pickupsNeeded + " Enemies Needed: " + level.enemiesNeeded);
@@ -445,7 +445,7 @@ function drawScreen() {
 // Move Player
 function movePlayer(direction) {
 	switch(direction)
-	{ 
+	{
 		case Direction.Left:
 			player.theta -= player.rotateSpeed;
 			break;
@@ -495,7 +495,7 @@ function spawnNPC() {
 		s.x = Math.random() * 10000 % (canvas.width - 25 * 2) + 25;
 		s.y = Math.random() * 10000 % (canvas.height - 25 * 2) + 25;
 	}while (!isInsideCanvas(s) || isCollidingWithObject(ALL_TYPE, s.x, s.y, enemyImage.width, enemyImage.height) || isInSafeArea(s, player.safeArea))
-	
+
 	spriteQueue.push(s);
 }
 
@@ -509,7 +509,7 @@ function spawnTerrain() {
 		s.x = Math.random() * 10000 % (canvas.width - 32 * 2) + 32;
 		s.y = Math.random() * 10000 % (canvas.height - 64 * 2) + 64;
 	}while (!isInsideCanvas(s) || isCollidingWithObject(ALL_TYPE, s.x, s.y, brownRock.width, brownRock.height) || isInSafeArea(s, player.safeArea));
-	
+
 	spriteQueue.push(s);
 }
 
@@ -520,7 +520,7 @@ function createExplosion(x,y) {
 	spriteQueue.push(explosion);
 }
 
-// 
+//
 // Create Pickup item
 function createPickup(x,y) {
 	var pickup = new Sprite(PICKUP_TYPE, x - diamondImage.width / 2, y - diamondImage.height / 2, diamondImage);
@@ -541,19 +541,19 @@ function locationOverlap(aLeft, aRight, aTop, aBottom, bLeft, bRight, bTop, bBot
 // Returns true if colliding with an object, false if not
 function isCollidingWithObject(objType, checkX, checkY, checkWidth, checkHeight, returnSprite)
 {
-	for (var i = 0; i < spriteQueue.length; i++) 
+	for (var i = 0; i < spriteQueue.length; i++)
 		{
 			//Check one specific type of sprite, or all of them
 			if(objType == ALL_TYPE || objType == spriteQueue[i].type)
 			{
 				if (locationOverlap(	checkX,
-										(checkX + checkWidth), 
-										checkY, 
-										(checkY + checkHeight), 
-										spriteQueue[i].x, 
-										(spriteQueue[i].x + spriteQueue[i].image.width), 
-										spriteQueue[i].y, 
-										(spriteQueue[i].y + spriteQueue[i].image.height))) 
+										(checkX + checkWidth),
+										checkY,
+										(checkY + checkHeight),
+										spriteQueue[i].x,
+										(spriteQueue[i].x + spriteQueue[i].image.width),
+										spriteQueue[i].y,
+										(spriteQueue[i].y + spriteQueue[i].image.height)))
 				{
 					if (typeof returnSprite == 'undefined')
     					return true;
@@ -653,7 +653,7 @@ function killPlayer() {
 	// Hacky way to not draw player
 	player.x = -1000;
 	player.y = -1000;
-	
+
 	$("#overlay").html("")
 				 .animate({opacity: 0.8, height: 758}, function() {$("#overlay").html("<h1>Sorry! You Lost...<h1><h1>Click to play again!</h1>")})
 				 .click(function() {
